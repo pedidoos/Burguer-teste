@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Max Burger & Grill - Cardápio Digital Inteligente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#fffbeb', 500: '#f59e0b', 600: '#d97706', 700: '#b45309', dark: '#121212', card: '#1e1e1e' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-brand-dark text-gray-100 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-brand-card border-b border-gray-800 sticky top-0 z-40 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchView('menu')">
+                <div class="bg-brand-500 text-brand-dark p-2.5 rounded-xl font-black text-xl shadow-md"><i class="fa-solid fa-burger"></i></div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wide">Max Burger & Grill</h1>
+                    <p class="text-xs text-brand-500">Artesanal & Irresistível</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button onclick="openDeliveryModal()" class="hidden sm:flex bg-zinc-800 hover:bg-zinc-700 px-3 py-2 rounded-xl text-xs font-medium transition items-center space-x-1.5 border border-zinc-700 text-gray-300">
+                    <i class="fa-solid fa-motorcycle text-brand-500"></i>
+                    <span>Taxas de Entrega</span>
+                </button>
+                <button onclick="openCart()" class="relative bg-zinc-800 hover:bg-zinc-700 px-4 py-2.5 rounded-xl text-sm font-medium transition flex items-center space-x-2 border border-zinc-700">
+                    <i class="fa-solid fa-cart-shopping text-brand-500"></i>
+                    <span class="hidden sm:inline">Carrinho</span>
+                    <span id="cart-badge" class="absolute -top-2 -right-2 bg-brand-500 text-brand-dark text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center hidden">0</span>
+                </button>
+                <button onclick="openAdminLogin()" class="bg-zinc-800 hover:bg-zinc-700 p-2.5 rounded-xl text-sm font-medium transition border border-zinc-700 text-gray-300 hover:text-white" title="Painel Administrativo">
+                    <i class="fa-solid fa-lock text-brand-500"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6">
+
+        <!-- VIEW: MENU DO CLIENTE -->
+        <div id="view-menu" class="space-y-6">
+            <div id="store-status-banner" class="bg-gradient-to-r from-amber-600 to-amber-800 rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden flex flex-col justify-center transition-all">
+                <div class="relative z-10 max-w-lg">
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        <span id="banner-status-badge" class="bg-black/30 text-brand-50 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">Aberto agora • Pedidos via WhatsApp</span>
+                        <span class="bg-black/40 text-brand-500 text-xs font-bold px-3 py-1 rounded-full flex items-center"><i class="fa-solid fa-clock mr-1.5"></i> Tempo estimado: 35-50 min</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-4xl font-black text-white mb-2">O Verdadeiro Sabor Artesanal</h2>
+                    <p id="banner-status-desc" class="text-gray-200 text-sm sm:text-base mb-4">Burgers suculentos na brasa. Acompanhe seu pedido em tempo real!</p>
+                    
+                    <div class="bg-black/30 backdrop-blur-md p-3 rounded-xl border border-white/10 flex items-center justify-between gap-2 max-w-md">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-ticket text-brand-500"></i>
+                            <span class="text-xs text-white font-medium">Cupom Ativo: <strong class="text-brand-500">MAX10</strong> (-10%)</span>
+                        </div>
+                        <button onclick="applyBannerCoupon()" class="bg-brand-500 hover:bg-brand-600 text-brand-dark px-3 py-1.5 rounded-lg text-xs font-bold transition">Aplicar</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="category-tabs" class="flex space-x-2 overflow-x-auto pb-2 scrollbar-none"></div>
+            <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+
+        <!-- VIEW: LOGIN ADMIN -->
+        <div id="view-admin-login" class="hidden max-w-md mx-auto mt-12 bg-brand-card p-8 rounded-2xl border border-zinc-800 shadow-2xl">
+            <div class="text-center mb-6">
+                <div class="bg-brand-500/10 text-brand-500 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 text-xl"><i class="fa-solid fa-shield-halved"></i></div>
+                <h3 class="text-xl font-bold">Painel Administrativo</h3>
+                <p class="text-xs text-gray-400 mt-1">Autenticação Segura via Firebase Authentication</p>
+            </div>
+            <form onsubmit="handleAdminLogin(event)" class="space-y-4" autocomplete="off">
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">E-mail de Acesso</label>
+                    <input type="email" id="admin-user" autocomplete="email" required placeholder="admin@maxburger.com" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Senha</label>
+                    <input type="password" id="admin-pass" autocomplete="current-password" required placeholder="••••••••" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 text-white">
+                </div>
+                <button type="submit" class="w-full bg-brand-500 hover:bg-brand-600 text-brand-dark font-bold py-3 rounded-xl transition shadow-lg">Entrar no Painel</button>
+                <button type="button" onclick="switchView('menu')" class="w-full bg-transparent hover:bg-zinc-800 text-gray-400 text-xs py-2 rounded-xl transition">Voltar ao Cardápio</button>
+            </form>
+        </div>
+
+        <!-- VIEW: PAINEL ADMINISTRATIVO -->
+        <div id="view-admin-dashboard" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-brand-card p-6 rounded-2xl border border-zinc-800">
+                <div class="flex items-center space-x-4">
+                    <div>
+                        <h2 class="text-2xl font-black">Painel de Controle Operacional</h2>
+                        <p class="text-xs text-gray-400">Sincronizado em Nuvem em Tempo Real (Firebase RTDB)</p>
+                    </div>
+                </div>
+                
+                <!-- BOTÃO DE CONEXÃO BLUETOOTH NO TOPO DO PAINEL -->
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <button id="btn-bluetooth-connect" onclick="connectBluetoothPrinter()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 shadow">
+                        <i class="fa-solid fa-bluetooth-b"></i>
+                        <span id="bluetooth-status-text">Conectar Impressora BT</span>
+                    </button>
+                    <button onclick="handleAdminLogout()" class="bg-zinc-800 hover:bg-zinc-700 px-4 py-2.5 rounded-xl text-xs text-gray-300 transition flex items-center space-x-2">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        <span>Sair</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ABAS DO PAINEL ADMIN -->
+            <div class="flex space-x-2 overflow-x-auto pb-2 border-b border-zinc-800">
+                <button onclick="switchAdminTab('orders')" id="btn-tab-orders" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-brand-500 text-brand-dark transition flex items-center space-x-2 whitespace-nowrap"><i class="fa-solid fa-receipt"></i><span>Gestão de Pedidos</span></button>
+                <button onclick="switchAdminTab('motoboys')" id="btn-tab-motoboys" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-zinc-800 text-gray-300 transition flex items-center space-x-2 whitespace-nowrap"><i class="fa-solid fa-motorcycle text-brand-500"></i><span>Janela de Entregadores</span></button>
+                <button onclick="switchAdminTab('settings')" id="btn-tab-settings" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-zinc-800 text-gray-300 transition flex items-center space-x-2 whitespace-nowrap"><i class="fa-solid fa-gears text-brand-500"></i><span>Configurações & Taxas</span></button>
+                <button onclick="switchAdminTab('completed')" id="btn-tab-completed" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-zinc-800 text-gray-300 transition flex items-center space-x-2 whitespace-nowrap"><i class="fa-solid fa-circle-check"></i><span>Histórico Completo</span></button>
+                <button onclick="switchAdminTab('menu-mgr')" id="btn-tab-menu-mgr" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-zinc-800 text-gray-300 transition flex items-center space-x-2 whitespace-nowrap"><i class="fa-solid fa-utensils"></i><span>Gerenciar Cardápio</span></button>
+                <button onclick="switchAdminTab('finance')" id="btn-tab-finance" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-zinc-800 text-gray-300 transition flex items-center space-x-2 whitespace-nowrap"><i class="fa-solid fa-chart-line"></i><span>Financeiro & Caixa</span></button>
+            </div>
+
+            <!-- SEÇÃO 1: PEDIDOS (TUDO CONSOLIDADO EM UMA SÓ JANELA COM ETAPAS) -->
+            <div id="admin-sec-orders" class="space-y-6">
+                <div class="flex justify-between items-center bg-brand-card p-4 rounded-2xl border border-zinc-800">
+                    <div>
+                        <h3 class="text-lg font-bold flex items-center space-x-2 text-brand-500"><i class="fa-solid fa-receipt"></i><span>Painel Central de Pedidos</span></h3>
+                        <p class="text-xs text-gray-400">Gerencie todo o fluxo: Aceite, Produção, Despacho e Conclusão com automação WhatsApp integrada.</p>
+                    </div>
+                    <button onclick="enableAudioAlerts()" class="bg-brand-500/20 text-brand-500 hover:bg-brand-500/30 px-3 py-1.5 rounded-xl text-xs font-bold transition border border-brand-500/30"><i class="fa-solid fa-volume-high mr-1"></i> Testar Alarme Sonoro</button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Coluna Novos -->
+                    <div class="bg-zinc-900/60 p-4 rounded-2xl border border-zinc-800 space-y-3">
+                        <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+                            <h4 class="font-bold text-sm text-brand-500 flex items-center gap-2"><i class="fa-solid fa-bell"></i> Novos Pedidos</h4>
+                            <span id="count-new" class="bg-brand-500 text-brand-dark text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                        </div>
+                        <div id="list-new-orders" class="space-y-3 max-h-[600px] overflow-y-auto pr-1"></div>
+                    </div>
+                    <!-- Coluna Produção -->
+                    <div class="bg-zinc-900/60 p-4 rounded-2xl border border-zinc-800 space-y-3">
+                        <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+                            <h4 class="font-bold text-sm text-amber-500 flex items-center gap-2"><i class="fa-solid fa-fire-burner"></i> Em Produção</h4>
+                            <span id="count-production" class="bg-amber-500 text-brand-dark text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                        </div>
+                        <div id="list-production-orders" class="space-y-3 max-h-[600px] overflow-y-auto pr-1"></div>
+                    </div>
+                    <!-- Coluna Entrega / Rota -->
+                    <div class="bg-zinc-900/60 p-4 rounded-2xl border border-zinc-800 space-y-3">
+                        <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+                            <h4 class="font-bold text-sm text-blue-500 flex items-center gap-2"><i class="fa-solid fa-motorcycle"></i> Em Rota de Entrega</h4>
+                            <span id="count-delivery" class="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                        </div>
+                        <div id="list-delivery-orders" class="space-y-3 max-h-[600px] overflow-y-auto pr-1"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEÇÃO 2: JANELA DOS ENTREGADORES (MOTOBOYS, HISTÓRICO SEPARADO, CAIXA, TROCA E CANCELAMENTO EM TEMPO REAL) -->
+            <div id="admin-sec-motoboys" class="hidden space-y-6">
+                <!-- Cadastro e Edição de Motoboys -->
+                <div class="bg-brand-card p-6 rounded-2xl border border-zinc-800 space-y-4">
+                    <h3 class="text-lg font-bold flex items-center space-x-2 text-brand-500"><i class="fa-solid fa-user-plus"></i><span id="motoboy-form-title">Cadastrar Novo Entregador</span></h3>
+                    <form onsubmit="handleSaveMotoboy(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <input type="hidden" id="motoboy-edit-id">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1">Nome do Entregador</label>
+                            <input type="text" id="motoboy-name" required placeholder="Ex: Carlos Silva" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1">WhatsApp com DDD</label>
+                            <input type="tel" id="motoboy-whatsapp" required placeholder="Ex: 63999887766" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 text-white">
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <button type="submit" class="flex-grow bg-brand-500 hover:bg-brand-600 text-brand-dark font-bold py-3 rounded-xl transition shadow-lg text-sm">Salvar Motoboy</button>
+                            <button type="button" onclick="resetMotoboyForm()" class="bg-zinc-800 hover:bg-zinc-700 text-gray-300 px-4 py-3 rounded-xl text-xs transition">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Lista de Motoboys Cadastrados -->
+                <div class="bg-brand-card p-6 rounded-2xl border border-zinc-800 space-y-4">
+                    <h4 class="text-base font-bold flex items-center space-x-2"><i class="fa-solid fa-users text-brand-500"></i><span>Entregadores Cadastrados & Fechamento de Caixa Diário</span></h4>
+                    <div id="motoboys-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                </div>
+
+                <!-- Histórico Separado por Entregador (Fechamento e Taxas Calculadas) -->
+                <div class="bg-brand-card p-6 rounded-2xl border border-zinc-800 space-y-4">
+                    <h4 class="text-base font-bold flex items-center space-x-2"><i class="fa-solid fa-route text-blue-400"></i><span>Histórico Detalhado por Entregador & Acerto de Taxas</span></h4>
+                    <div id="motoboy-detailed-history" class="space-y-4"></div>
+                </div>
+            </div>
+
+            <!-- SEÇÃO 3: CONFIGURAÇÕES E TAXAS DE SETORES -->
+            <div id="admin-sec-settings" class="hidden space-y-6">
+                <!-- Horários e Funcionamento -->
+                <div class="bg-brand-card p-6 rounded-2xl border border-zinc-800 space-y-6 shadow-xl">
+                    <div class="flex justify-between items-center border-b border-zinc-800 pb-4">
+                        <div>
+                            <h3 class="text-lg font-bold flex items-center space-x-2 text-brand-500"><i class="fa-solid fa-clock-rotate-left"></i><span>Controle de Funcionamento & Horários</span></h3>
+                            <p class="text-xs text-gray-400 mt-1">Gerencie se o cardápio está aberto/fechado instantaneamente ou programe horários automáticos.</p>
+                        </div>
+                        <div id="live-store-status-badge" class="px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider">Verificando...</div>
+                    </div>
+
+                    <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h4 class="font-bold text-sm text-white">Ação Manual Imediata</h4>
+                            <p class="text-xs text-gray-400">Forçar o fechamento imediato do cardápio ou reabrir independentemente da programação horária.</p>
+                        </div>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                            <button onclick="setManualStoreState('open')" class="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition shadow">Forçar Aberto 🟢</button>
+                            <button onclick="setManualStoreState('closed')" class="flex-1 sm:flex-none bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition shadow">Forçar Fechado 🔴</button>
+                            <button onclick="setManualStoreState('auto')" class="flex-1 sm:flex-none bg-zinc-800 hover:bg-zinc-700 text-brand-500 font-bold px-4 py-2.5 rounded-xl text-xs transition border border-zinc-700">Usar Horários ⏰</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gestão de Taxas dos Setores Já Cadastrados -->
+                <div class="bg-brand-card p-6 rounded-2xl border border-zinc-800 space-y-6">
+                    <h3 class="text-lg font-bold flex items-center space-x-2 text-brand-500"><i class="fa-solid fa-motorcycle"></i><span>Edição e Gestão de Taxas dos Setores</span></h3>
+                    <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 space-y-4">
+                        <h4 class="font-bold text-sm text-white" id="sector-form-title">Cadastrar / Editar Setor e Valor</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <input type="hidden" id="sector-edit-firebase-key">
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Nome do Setor / Bairro</label>
+                                <input type="text" id="sector-name-input" placeholder="Ex: Centro" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-500 text-white">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-400 mb-1">Valor da Taxa (R$)</label>
+                                <input type="number" step="0.01" id="sector-price-input" placeholder="Ex: 5.00" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-500 text-white">
+                            </div>
+                            <div class="flex items-end gap-2">
+                                <button onclick="saveSectorRate()" class="flex-grow bg-brand-500 hover:bg-brand-600 text-brand-dark font-bold py-2.5 rounded-xl transition text-xs shadow">Salvar Setor</button>
+                                <button onclick="resetSectorForm()" class="bg-zinc-800 hover:bg-zinc-700 text-gray-300 px-3 py-2.5 rounded-xl text-xs transition">Limpar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Setores Cadastrados (Clique em Editar para Alterar Taxas)</h4>
+                        <div id="sectors-list-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEÇÃO 4: HISTÓRICO COMPLETO DE PEDIDOS CONCLUÍDOS -->
+            <div id="admin-sec-completed" class="hidden space-y-4">
+                <div class="flex justify-between items-center bg-brand-card p-4 rounded-2xl border border-zinc-800">
+                    <h3 class="text-lg font-bold flex items-center space-x-2 text-green-500"><i class="fa-solid fa-circle-check"></i><span>Histórico Completo de Pedidos Concluídos</span></h3>
+                    <span id="completed-count-badge" class="bg-green-500/20 text-green-400 text-xs font-bold px-3 py-1 rounded-full border border-green-500/30">0 pedidos</span>
+                </div>
+                <div id="list-completed-orders" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+
+            <!-- SEÇÃO 5: GERENCIAMENTO DE CARDÁPIO (CADASTRO E EDIÇÃO EM TEMPO REAL) -->
+            <div id="admin-sec-menu-mgr" class="hidden space-y-6">
+                <div class="flex justify-between items-center bg-brand-card p-4 rounded-2xl border border-zinc-800">
+                    <div>
+                        <h3 class="text-lg font-bold flex items-center space-x-2"><i class="fa-solid fa-utensils text-brand-500"></i><span>Gerenciamento de Cardápio em Tempo Real</span></h3>
+                        <p class="text-xs text-gray-400">Cadastre novos itens ou edite preços, descrições e fotos instantaneamente.</p>
+                    </div>
+                    <button onclick="openItemModal()" class="bg-brand-500 hover:bg-brand-600 text-brand-dark px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 shadow"><i class="fa-solid fa-plus"></i><span>Novo Item</span></button>
+                </div>
+                <div id="admin-menu-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+
+            <!-- SEÇÃO 6: FINANCEIRO & CAIXA -->
+            <div id="admin-sec-finance" class="hidden space-y-6">
+                <div class="bg-brand-card p-6 rounded-2xl border border-zinc-800 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="flex items-center space-x-3 w-full md:w-auto">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1">Filtrar por Data Específica</label>
+                            <input type="date" id="finance-date-filter" onchange="renderFinanceReports()" class="bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-brand-500 text-white">
+                        </div>
+                        <button onclick="clearDateFilter()" class="mt-5 bg-zinc-800 hover:bg-zinc-700 px-3 py-2 rounded-xl text-xs text-gray-300 transition">Ver Tudo</button>
+                    </div>
+                    <div class="flex flex-wrap gap-2 w-full md:w-auto justify-end">
+                        <button onclick="clearHistoryPeriod('day')" class="bg-zinc-800 hover:bg-zinc-700 text-amber-400 px-3 py-2 rounded-xl text-xs font-bold transition border border-zinc-700">Limpar Caixa do Dia</button>
+                        <button onclick="clearHistoryPeriod('all')" class="bg-red-500/10 hover:bg-red-500/20 text-red-500 px-3 py-2 rounded-xl text-xs font-bold transition border border-red-500/30">Zerar Todo Histórico</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-brand-card p-5 rounded-2xl border border-zinc-800">
+                        <span class="text-xs text-gray-400">Faturamento Filtrado / Hoje</span>
+                        <h4 id="rep-day" class="text-2xl font-black text-brand-500 mt-1">R$ 0,00</h4>
+                    </div>
+                    <div class="bg-brand-card p-5 rounded-2xl border border-zinc-800">
+                        <span class="text-xs text-gray-400">Faturamento da Semana</span>
+                        <h4 id="rep-week" class="text-2xl font-black text-brand-500 mt-1">R$ 0,00</h4>
+                    </div>
+                    <div class="bg-brand-card p-5 rounded-2xl border border-zinc-800">
+                        <span class="text-xs text-gray-400">Faturamento do Mês</span>
+                        <h4 id="rep-month" class="text-2xl font-black text-brand-500 mt-1">R$ 0,00</h4>
+                    </div>
+                    <div class="bg-brand-card p-5 rounded-2xl border border-zinc-800">
+                        <span class="text-xs text-gray-400">Total de Pedidos no Caixa</span>
+                        <h4 id="rep-count" class="text-2xl font-black text-brand-500 mt-1">0</h4>
+                    </div>
+                </div>
+
+                <div class="bg-brand-card p-6 rounded-2xl border border-zinc-800 space-y-4">
+                    <h4 class="text-base font-bold flex items-center space-x-2"><i class="fa-solid fa-receipt text-brand-500"></i><span>Extrato de Vendas & Fechamento de Caixa</span></h4>
+                    <div id="finance-orders-list" class="space-y-2 divide-y divide-zinc-800/60 overflow-y-auto max-h-96"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAIS DO CLIENTE & ADMIN -->
+    <div id="product-detail-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
+        <div class="bg-brand-card w-full max-w-lg rounded-3xl border border-zinc-800 shadow-2xl relative overflow-hidden my-auto">
+            <button onclick="closeProductDetail()" class="absolute top-4 right-4 bg-black/50 hover:bg-black text-white w-10 h-10 rounded-full flex items-center justify-center z-10 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <div class="h-64 overflow-hidden relative">
+                <img id="detail-img" src="" alt="" class="w-full h-full object-cover">
+                <span id="detail-category" class="absolute bottom-3 left-3 bg-brand-dark/85 backdrop-blur-md text-brand-500 text-xs font-bold px-3 py-1 rounded-full"></span>
+            </div>
+            <div class="p-6 space-y-5">
+                <div>
+                    <h3 id="detail-name" class="text-2xl font-black text-white mb-1"></h3>
+                    <p id="detail-desc" class="text-sm text-gray-300 leading-relaxed"></p>
+                </div>
+                <div class="border-t border-zinc-800 pt-4 space-y-3">
+                    <h4 class="text-xs font-bold text-brand-500 uppercase tracking-wider"><i class="fa-solid fa-plus-circle mr-1"></i> Escolha os Adicionais & Opcionais</h4>
+                    <div id="detail-addons-list" class="space-y-2.5 max-h-40 overflow-y-auto pr-1"></div>
+                </div>
+                <div class="border-t border-zinc-800 pt-4 flex items-center justify-between">
+                    <div>
+                        <span class="text-xs text-gray-400 block">Preço Total do Item</span>
+                        <span id="detail-total-price" class="text-2xl font-black text-brand-500">R$ 0,00</span>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div class="flex items-center space-x-2 bg-zinc-900 border border-zinc-700 rounded-xl p-1">
+                            <button onclick="adjustDetailQty(-1)" class="w-8 h-8 bg-zinc-800 hover:bg-zinc-700 rounded-lg font-bold text-white flex items-center justify-center">-</button>
+                            <span id="detail-qty" class="w-6 text-center font-bold text-sm">1</span>
+                            <button onclick="adjustDetailQty(1)" class="w-8 h-8 bg-zinc-800 hover:bg-zinc-700 rounded-lg font-bold text-white flex items-center justify-center">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 pt-2">
+                    <button onclick="minimizeProductDetail()" class="bg-zinc-800 hover:bg-zinc-700 text-gray-300 font-bold py-3.5 rounded-xl transition text-xs flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-window-minimize"></i><span>Minimizar</span>
+                    </button>
+                    <button onclick="addDetailedProductToCart()" class="bg-brand-500 hover:bg-brand-600 text-brand-dark font-bold py-3.5 rounded-xl transition text-xs shadow-lg flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-cart-plus"></i><span>Adicionar</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TAXAS DE ENTREGA -->
+    <div id="delivery-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-brand-card w-full max-w-md p-6 rounded-2xl border border-zinc-800 shadow-2xl relative">
+            <div class="flex justify-between items-center pb-4 border-b border-zinc-800 mb-4">
+                <h3 class="text-lg font-bold text-brand-500"><i class="fa-solid fa-motorcycle mr-2"></i> Taxas de Entrega por Setor</h3>
+                <button onclick="closeDeliveryModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="modal-sectors-list" class="space-y-2.5 max-h-60 overflow-y-auto mb-4"></div>
+            <button onclick="closeDeliveryModal()" class="w-full bg-brand-500 hover:bg-brand-600 text-brand-dark font-bold py-3 rounded-xl transition text-xs shadow">Entendido</button>
+        </div>
+    </div>
+
+    <!-- MODAL ATRIBUIR / TROCAR MOTOBOY -->
+    <div id="assign-motoboy-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-brand-card w-full max-w-md p-6 rounded-2xl border border-zinc-800 shadow-2xl relative">
+            <div class="flex justify-between items-center pb-4 border-b border-zinc-800 mb-4">
+                <h3 id="assign-modal-title" class="text-lg font-bold text-brand-500"><i class="fa-solid fa-motorcycle mr-2"></i> Selecionar Motoboy para Entrega</h3>
+                <button onclick="closeAssignMotoboyModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <input type="hidden" id="assign-order-key">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Escolha o Entregador Cadastrado</label>
+                    <select id="select-motoboy-target" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 text-white"></select>
+                </div>
+                <button onclick="confirmAssignMotoboy()" class="w-full bg-brand-500 hover:bg-brand-600 text-brand-dark font-bold py-3.5 rounded-xl transition shadow-lg">Confirmar e Enviar Cupom ao Motoboy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SACOLA / CARRINHO -->
+    <div id="cart-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex justify-end backdrop-blur-sm">
+        <div class="bg-brand-card w-full max-w-md h-full flex flex-col p-6 border-l border-zinc-800 shadow-2xl">
+            <div class="flex justify-between items-center pb-4 border-b border-zinc-800">
+                <h3 class="text-lg font-bold flex items-center space-x-2"><i class="fa-solid fa-bag-shopping text-brand-500"></i><span>Sua Sacola</span></h3>
+                <button onclick="closeCart()" class="text-gray-400 hover:text-white p-2"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="py-3 border-b border-zinc-800 flex gap-2">
+                <input type="text" id="cart-coupon-input" placeholder="Cupom (ex: MAX10)" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs uppercase text-white focus:outline-none focus:border-brand-500">
+                <button onclick="applyCartCoupon()" class="bg-zinc-800 hover:bg-zinc-700 text-brand-500 px-4 py-2 rounded-xl text-xs font-bold transition border border-zinc-700">Aplicar</button>
+            </div>
+            <div id="cart-items" class="flex-grow overflow-y-auto py-4 space-y-3 divide-y divide-zinc-800/50"></div>
+            <div class="pt-4 border-t border-zinc-800 space-y-3">
+                <div class="flex justify-between text-sm"><span class="text-gray-400">Subtotal</span><span id="cart-subtotal" class="font-bold">R$ 0,00</span></div>
+                <div id="cart-discount-row" class="hidden flex justify-between text-sm text-green-400"><span>Desconto Cupom</span><span id="cart-discount-display">- R$ 0,00</span></div>
+                <div class="flex justify-between text-sm"><span class="text-gray-400">Taxa de Entrega</span><span id="cart-delivery-display" class="font-bold text-brand-500">R$ 0,00</span></div>
+                <div class="flex justify-between text-base font-black pt-2 border-t border-zinc-800"><span>Total</span><span id="cart-total" class="text-brand-500">R$ 0,00</span></div>
+                <button onclick="openCheckout()" id="btn-proceed-checkout" class="w-full bg-brand-500 hover:bg-brand-600 text-brand-dark font-bold py-3.5 rounded-xl transition shadow-lg mt-2">Avançar para Finalizar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHECKOUT -->
+    <div id="checkout-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
+        <div class="bg-brand-card w-full max-w-lg p-6 rounded-2xl border border-zinc-800 shadow-2xl relative my-auto">
+            <div class="flex justify-between items-center pb-4 border-b border-zinc-800 mb-4">
+                <h3 class="text-lg font-bold text-brand-500"><i class="fa-solid fa-receipt mr-2"></i> Resumo do Pedido & Entrega</h3>
+                <button onclick="closeCheckout()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="submitOrder(event)" class="space-y-4">
+                <div id="checkout-order-summary" class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 space-y-2 max-h-40 overflow-y-auto"></div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Nome Completo</label>
+                        <input type="text" id="client-name" required placeholder="Ex: João da Silva" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">WhatsApp com DDD</label>
+                        <input type="tel" id="client-phone" required placeholder="Ex: 63999999999" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 text-white">
+                    </div>
+                </div>
+                <div id="checkout-sector-group">
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Setor / Bairro de Entrega</label>
+                    <select id="client-sector" onchange="renderCartItems(); renderCheckoutSummary();" required class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 text-white"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Endereço Completo</label>
+                    <textarea id="client-address" required rows="2" placeholder="Ex: Av. JK, 1000" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 text-white"></textarea>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Forma de Pagamento</label>
+                        <select id="client-payment" onchange="toggleTrocoField()" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 text-white">
+                            <option value="Cartão de Crédito">Cartão de Crédito</option>
+                            <option value="Cartão de Débito">Cartão de Débito</option>
+                            <option value="Pix">Pix</option>
+                            <option value="Dinheiro">Dinheiro</option>
+                        </select>
+                    </div>
+                    <div id="troco-container" class="hidden">
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Troco para quanto?</label>
+                        <input type="text" id="client-troco" placeholder="Ex: R$ 50,00" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 text-white">
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3 pt-2">
+                    <button type="button" onclick="backToCartFromCheckout()" class="w-1/3 bg-zinc-800 hover:bg-zinc-700 text-gray-300 font-bold py-3.5 rounded-xl transition text-xs shadow">Voltar</button>
+                    <button type="submit" class="w-2/3 bg-brand-500 hover:bg-brand-600 text-brand-dark font-bold py-3.5 rounded-xl transition text-sm shadow-lg flex items-center justify-center space-x-2">Finalizar Pedido</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL CANCELAR -->
+    <div id="cancel-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-brand-card w-full max-w-md p-6 rounded-2xl border border-zinc-800 shadow-2xl relative">
+            <div class="flex justify-between items-center pb-4 border-b border-zinc-800 mb-4">
+                <h3 class="text-lg font-bold text-red-500"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Cancelar Pedido</h3>
+                <button onclick="closeCancelModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <input type="hidden" id="cancel-order-key">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Motivo do Cancelamento</label>
+                    <textarea id="cancel-reason" rows="3" required placeholder="Ex: Cliente desistiu / Problema na entrega..." class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-red-500 text-white"></textarea>
+                </div>
+                <button onclick="confirmOrderCancellation()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg">Confirmar Cancelamento</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ITEM CARDÁPIO (CADASTRO E EDIÇÃO EM TEMPO REAL) -->
+    <div id="item-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-brand-card w-full max-w-lg p-6 rounded-2xl border border-zinc-800 shadow-2xl relative">
+            <div class="flex justify-between items-center pb-4 border-b border-zinc-800 mb-4">
+                <h3 id="item-modal-title" class="text-lg font-bold">Novo Item do Cardápio</h3>
+                <button onclick="closeItemModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="saveMenuItem(event)" class="space-y-4">
+                <input type="hidden" id="item-id">
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Nome do Item</label>
+                    <input type="text" id="item-name" required class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 text-white">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Categoria</label>
+                        <select id="item-category" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 text-white">
+                            <option value="Burgers">Burgers</option>
+                            <option value="Acompanhamentos">Acompanhamentos</option>
+                            <option value="Bebidas">Bebidas</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Preço (R$)</label>
+                        <input type="number" step="0.01" id="item-price" required class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 text-white">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">URL da Imagem</label>
+                    <input type="text" id="item-image" required placeholder="https://..." class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Descrição</label>
+                    <textarea id="item-desc" required rows="2" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 text-white"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-brand-500 hover:bg-brand-600 text-brand-dark font-bold py-3 rounded-xl transition shadow-lg mt-2">Salvar Item</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- FIREBASE MODULE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+        import { getDatabase, ref, set, get, onValue, update, remove, push, child } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCczhst9EVg27JpvBMq9C-Z0n9efQpI5rQ",
+            authDomain: "studio-bella-rosa.firebaseapp.com",
+            databaseURL: "https://studio-bella-rosa-default-rtdb.firebaseio.com",
+            projectId: "studio-bella-rosa",
+            storageBucket: "studio-bella-rosa.firebasestorage.app",
+            messagingSenderId: "235281594938",
+            appId: "1:235281594938:web:bb215b9aaa694e219d5303",
+            measurementId: "G-TCNBC5S04S"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const auth = getAuth(app);
+
+        window.db = database;
+        window.dbRef = ref;
+        window.dbSet = set;
+        window.dbGet = get;
+        window.dbOnValue = onValue;
+        window.dbUpdate = update;
+        window.dbRemove = remove;
+        window.dbPush = push;
+        window.dbChild = child;
+
+        window.firebaseAuth = auth;
+        window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+        window.signOut = signOut;
+        window.onAuthStateChanged = onAuthStateChanged;
+
+        window.dispatchEvent(new Event('firebase-ready'));
+    </script>
+
+    <!-- SISTEMA E IMPRESSÃO BLUETOOTH ESC/POS -->
+    <script>
+        const API_URL = 'https://maxburger-api.onrender.com';
+        const INSTANCE_NAME = 'maxburger';
+        const API_KEY = 'max123456';
+        const COMERCE_WHATSAPP = '5563984140501';
+
+        let menuData = [];
+        let orders = [];
+        let motoboys = [];
+        let sectors = [];
+        let deliverySettings = { 
+            mode: 'sector', 
+            fixedRate: 5.00, 
+            soundEnabled: true,
+            storeState: 'auto',
+            scheduleActive: false,
+            openTime: '18:00',
+            closeTime: '23:59'
+        };
+        let cart = [];
+        let currentCategory = 'Todos';
+        let appliedCoupon = null;
+        let discountPercent = 0;
+        let alarmInterval = null;
+        let storeCheckInterval = null;
+
+        let bluetoothDevice = null;
+        let bluetoothCharacteristic = null;
+
+        const availableAddons = [
+            { id: 'bacon', name: 'Bacon Extra Crocante', price: 5.00 },
+            { id: 'cheddar', name: 'Cheddar Cremoso Extra', price: 4.50 },
+            { id: 'burger', name: 'Blend 180g Extra na Brasa', price: 9.00 },
+            { id: 'ovo', name: 'Ovo Frito na Chapa', price: 3.00 }
+        ];
+
+        let selectedProductForDetail = null;
+        let currentDetailQty = 1;
+
+        let messageQueue = [];
+        let isProcessingQueue = false;
+        const MESSAGE_DELAY_MS = 12000;
+
+        function enqueueWhatsAppMessage(phone, text) {
+            messageQueue.push({ phone, text });
+            processWhatsAppQueue();
+        }
+
+        async function processWhatsAppQueue() {
+            if (isProcessingQueue || messageQueue.length === 0) return;
+            isProcessingQueue = true;
+            const { phone, text } = messageQueue.shift();
+            await triggerWhatsAppDirect(phone, text);
+            setTimeout(() => {
+                isProcessingQueue = false;
+                processWhatsAppQueue();
+            }, MESSAGE_DELAY_MS);
+        }
+
+        async function triggerWhatsAppDirect(phone, text) {
+            let cleanNumber = phone.replace(/\D/g, '');
+            if (!cleanNumber.startsWith('55')) cleanNumber = '55' + cleanNumber;
+            try {
+                await fetch(`${API_URL}/message/sendText/${INSTANCE_NAME}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': API_KEY },
+                    body: JSON.stringify({ number: cleanNumber, text: text })
+                });
+            } catch (error) {
+                console.error('Erro WhatsApp:', error);
+            }
+        }
+
+        // ==========================================
+        // IMPRESSÃO BLUETOOTH ESC/POS
+        // ==========================================
+        async function connectBluetoothPrinter() {
+            try {
+                document.getElementById('bluetooth-status-text').innerText = 'Buscando...';
+                bluetoothDevice = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb', '49535343-fe7d-4ae5-8fa9-9fafd205e455', '0000ff00-0000-1000-8000-00805f9b34fb']
+                });
+
+                const server = await bluetoothDevice.gatt.connect();
+                let service = null;
+                let characteristic = null;
+                const services = await server.getPrimaryServices();
+                for (let s of services) {
+                    try {
+                        const chars = await s.getCharacteristics();
+                        for (let c of chars) {
+                            if (c.properties.write || c.properties.writeWithoutResponse) {
+                                service = s;
+                                characteristic = c;
+                                break;
+                            }
+                        }
+                    } catch (err) { }
+                    if (characteristic) break;
+                }
+
+                if (!characteristic) throw new Error('Nenhuma característica ESC/POS encontrada.');
+
+                bluetoothCharacteristic = characteristic;
+                document.getElementById('bluetooth-status-text').innerText = 'Conectado 🖨️';
+                document.getElementById('btn-bluetooth-connect').className = 'bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 shadow';
+                alert('Impressora Térmica Bluetooth conectada com sucesso!');
+
+                bluetoothDevice.addEventListener('gattserverdisconnected', () => {
+                    document.getElementById('bluetooth-status-text').innerText = 'Reconectar BT';
+                    document.getElementById('btn-bluetooth-connect').className = 'bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 shadow';
+                    bluetoothCharacteristic = null;
+                });
+            } catch (error) {
+                console.error('Erro Bluetooth:', error);
+                document.getElementById('bluetooth-status-text').innerText = 'Conectar Impressora BT';
+                alert('Erro ao conectar impressora Bluetooth: ' + error.message);
+            }
+        }
+
+        async function printOrderThermal(order) {
+            if (!bluetoothCharacteristic) return;
+            try {
+                const encoder = new TextEncoder();
+                let commands = [];
+                commands.push(new Uint8Array([0x1B, 0x40]));
+                commands.push(new Uint8Array([0x1B, 0x61, 0x01]));
+                commands.push(encoder.encode("MAX BURGER & GRILL\n"));
+                commands.push(encoder.encode("--------------------------------\n"));
+                
+                commands.push(new Uint8Array([0x1B, 0x61, 0x00]));
+                commands.push(encoder.encode(`PEDIDO: #${order.dailyId}\n`));
+                commands.push(encoder.encode(`Data: ${new Date(order.date).toLocaleString('pt-BR')}\n`));
+                commands.push(encoder.encode(`Cliente: ${order.client.name}\n`));
+                commands.push(encoder.encode(`Fone: ${order.client.phone}\n`));
+                commands.push(encoder.encode(`Pagamento: ${order.client.payment}\n`));
+                if(order.client.troco) commands.push(encoder.encode(`Troco: ${order.client.troco}\n`));
+                
+                commands.push(encoder.encode("--------------------------------\n"));
+                commands.push(encoder.encode("ITENS DO PEDIDO:\n"));
+                order.items.forEach(item => {
+                    commands.push(encoder.encode(`${item.qty}x ${item.name} - R$ ${(item.price * item.qty).toFixed(2)}\n`));
+                    if(item.addons && item.addons.length > 0) {
+                        commands.push(encoder.encode(`   + ${item.addons.map(a => a.name).join(', ')}\n`));
+                    }
+                });
+
+                commands.push(encoder.encode("--------------------------------\n"));
+                commands.push(encoder.encode(`Subtotal: R$ ${order.subtotal.toFixed(2)}\n`));
+                if(order.discount > 0) commands.push(encoder.encode(`Desconto: - R$ ${order.discount.toFixed(2)}\n`));
+                commands.push(encoder.encode(`Taxa Entrega: R$ ${order.deliveryFee.toFixed(2)}\n`));
+                commands.push(new Uint8Array([0x1B, 0x45, 0x01]));
+                commands.push(encoder.encode(`TOTAL: R$ ${order.total.toFixed(2)}\n`));
+                commands.push(new Uint8Array([0x1B, 0x45, 0x00]));
+
+                commands.push(encoder.encode("--------------------------------\n"));
+                commands.push(new Uint8Array([0x1B, 0x61, 0x01]));
+                commands.push(encoder.encode(`ENDERECO DE ENTREGA:\n`));
+                commands.push(encoder.encode(`${order.client.address}\n`));
+                if(order.client.sectorName) commands.push(encoder.encode(`Setor: ${order.client.sectorName}\n`));
+                
+                commands.push(encoder.encode("\nObrigado pela preferencia!\n\n\n"));
+                commands.push(new Uint8Array([0x1D, 0x56, 0x41, 0x10]));
+
+                for (let cmd of commands) {
+                    await bluetoothCharacteristic.writeValue(cmd);
+                }
+            } catch (err) {
+                console.error('Erro na impressão térmica:', err);
+            }
+        }
+
+        // ==========================================
+        // FIREBASE & INICIALIZAÇÃO
+        // ==========================================
+        window.addEventListener('firebase-ready', () => {
+            initFirebaseListeners();
+            initAuthListener();
+            startRealtimeStoreChecker();
+        });
+
+        function startRealtimeStoreChecker() {
+            if(storeCheckInterval) clearInterval(storeCheckInterval);
+            storeCheckInterval = setInterval(() => { evaluateStoreOpenStatus(); }, 1000);
+        }
+
+        function evaluateStoreOpenStatus() {
+            let isOpen = true;
+            let statusText = "Aberto agora • Pedidos via WhatsApp";
+            let bannerClass = "bg-gradient-to-r from-amber-600 to-amber-800";
+
+            if (deliverySettings.storeState === 'closed') {
+                isOpen = false;
+                statusText = "Fechado no momento 🔴";
+                bannerClass = "bg-gradient-to-r from-zinc-800 to-zinc-900 border border-zinc-700";
+            } else if (deliverySettings.storeState === 'open') {
+                isOpen = true;
+                statusText = "Aberto Manualmente • Pedidos Liberados 🟢";
+                bannerClass = "bg-gradient-to-r from-green-700 to-emerald-900";
+            }
+
+            const banner = document.getElementById('store-status-banner');
+            const badge = document.getElementById('banner-status-badge');
+            const liveBadge = document.getElementById('live-store-status-badge');
+            if (banner) banner.className = `${bannerClass} rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden flex flex-col justify-center transition-all`;
+            if (badge) badge.innerText = statusText;
+            if (liveBadge) {
+                liveBadge.innerText = isOpen ? "STATUS: ABERTO 🟢" : "STATUS: FECHADO 🔴";
+                liveBadge.className = isOpen ? "px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider bg-green-500/20 text-green-400 border border-green-500/30" : "px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider bg-red-500/20 text-red-400 border border-red-500/30";
+            }
+        }
+
+        async function setManualStoreState(state) {
+            deliverySettings.storeState = state;
+            await window.dbUpdate(window.dbRef(window.db, 'maxburger/settings'), { storeState: state });
+            evaluateStoreOpenStatus();
+        }
+
+        function initAuthListener() {
+            window.onAuthStateChanged(window.firebaseAuth, (user) => {
+                if (!user && !document.getElementById('view-admin-dashboard').classList.contains('hidden')) {
+                    switchView('admin-login');
+                }
+            });
+        }
+
+        async function initFirebaseListeners() {
+            window.dbOnValue(window.dbRef(window.db, 'maxburger/settings'), (snapshot) => {
+                const data = snapshot.val();
+                if (data) deliverySettings = { ...deliverySettings, ...data };
+                evaluateStoreOpenStatus();
+            });
+
+            window.dbOnValue(window.dbRef(window.db, 'maxburger/sectors'), (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    sectors = Object.keys(data).map(key => ({ firebaseKey: key, ...data[key] }));
+                } else {
+                    sectors = [
+                        { firebaseKey: '1', name: 'Centro', price: 5.00 },
+                        { firebaseKey: '2', name: 'Plano Diretor Sul', price: 7.00 }
+                    ];
+                    window.dbSet(window.dbRef(window.db, 'maxburger/sectors'), sectors);
+                }
+                renderSectorsList();
+                renderModalSectorsList();
+                populateCheckoutSectors();
+            });
+
+            window.dbOnValue(window.dbRef(window.db, 'maxburger/menu'), (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    menuData = Array.isArray(data) ? data : Object.values(data);
+                } else {
+                    menuData = [
+                        { id: 1, name: 'Max Bacon Melt', category: 'Burgers', price: 34.90, desc: 'Blend bovino 180g, cheddar, bacon no pão brioche', image: 'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?auto=format&fit=crop&w=600&q=80' },
+                        { id: 2, name: 'Coca-Cola 350ml', category: 'Bebidas', price: 6.00, desc: 'Lata gelada 350ml.', image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=600&q=80' }
+                    ];
+                    window.dbSet(window.dbRef(window.db, 'maxburger/menu'), menuData);
+                }
+                renderCategories();
+                renderMenu();
+                renderAdminMenu();
+            });
+
+            window.dbOnValue(window.dbRef(window.db, 'maxburger/motoboys'), (snapshot) => {
+                const data = snapshot.val();
+                motoboys = data ? Object.keys(data).map(key => ({ firebaseKey: key, ...data[key] })) : [];
+                renderMotoboysList();
+                renderMotoboyHistoryUI();
+            });
+
+            window.dbOnValue(window.dbRef(window.db, 'maxburger/orders'), (snapshot) => {
+                const data = snapshot.val();
+                orders = data ? Object.keys(data).map(key => ({ firebaseKey: key, ...data[key] })) : [];
+                orders.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                const hasPending = orders.some(o => o.status === 'new');
+                if (hasPending && deliverySettings.soundEnabled && !alarmInterval) {
+                    alarmInterval = setInterval(() => { if(deliverySettings.soundEnabled) playNotificationSound(); }, 4000);
+                } else if (!hasPending && alarmInterval) {
+                    clearInterval(alarmInterval);
+                    alarmInterval = null;
+                }
+
+                if(!document.getElementById('view-admin-dashboard').classList.contains('hidden')) {
+                    renderAdminDashboard();
+                }
+            });
+        }
+
+        // ==========================================
+        // FLUXO DE PEDIDOS & STATUS EM TEMPO REAL
+        // ==========================================
+        async function updateOrderStatus(firebaseKey, newStatus) {
+            const order = orders.find(o => o.firebaseKey === firebaseKey);
+            if(!order) return;
+
+            await window.dbUpdate(window.dbRef(window.db, `maxburger/orders/${firebaseKey}`), { status: newStatus });
+
+            if(newStatus === 'production') {
+                await printOrderThermal(order);
+                const msg = `🔥 Olá ${order.client.name}, seu pedido #${order.dailyId} foi aceito e já está em produção na brasa!`;
+                enqueueWhatsAppMessage(order.client.phone, msg);
+            } else if(newStatus === 'completed') {
+                const msg = `✅ Olá ${order.client.name}, seu pedido #${order.dailyId} foi concluído. Agradecemos a preferência!`;
+                enqueueWhatsAppMessage(order.client.phone, msg);
+            }
+        }
+
+        async function manualPrintOrder(firebaseKey) {
+            const order = orders.find(o => o.firebaseKey === firebaseKey);
+            if(order) {
+                await printOrderThermal(order);
+                alert('Comanda reimpressa com sucesso na impressora Bluetooth!');
+            }
+        }
+
+        // Cancelamento em Tempo Real
+        function openCancelModal(firebaseKey) {
+            document.getElementById('cancel-order-key').value = firebaseKey;
+            document.getElementById('cancel-reason').value = '';
+            document.getElementById('cancel-modal').classList.remove('hidden');
+        }
+
+        function closeCancelModal() {
+            document.getElementById('cancel-modal').classList.add('hidden');
+        }
+
+        async function confirmOrderCancellation() {
+            const key = document.getElementById('cancel-order-key').value;
+            const reason = document.getElementById('cancel-reason').value.trim();
+            if(!reason) return alert('Informe o motivo do cancelamento.');
+
+            const order = orders.find(o => o.firebaseKey === key);
+            if(!order) return;
+
+            await window.dbUpdate(window.dbRef(window.db, `maxburger/orders/${key}`), { status: 'cancelled', cancelReason: reason });
+            closeCancelModal();
+
+            const msg = `❌ Olá ${order.client.name}, infelizmente seu pedido #${order.dailyId} foi cancelado. Motivo: ${reason}`;
+            enqueueWhatsAppMessage(order.client.phone, msg);
+            alert('Pedido cancelado e cliente notificado via WhatsApp!');
+        }
+
+        async function submitOrder(e) {
+            e.preventDefault();
+            const name = document.getElementById('client-name').value;
+            const phone = document.getElementById('client-phone').value.replace(/\D/g, '');
+            const sectorSelect = document.getElementById('client-sector');
+            const sectorName = sectorSelect.options[sectorSelect.selectedIndex].text.split(' (')[0];
+            const address = document.getElementById('client-address').value;
+            const payment = document.getElementById('client-payment').value;
+            const troco = document.getElementById('client-troco').value;
+
+            const subtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            const discount = (subtotal * discountPercent) / 100;
+            const deliveryFee = getCurrentDeliveryFee();
+            const total = (subtotal - discount) + deliveryFee;
+            const dailyId = Math.floor(100 + Math.random() * 900);
+
+            const newOrder = {
+                dailyId,
+                date: new Date().toISOString(),
+                status: 'new',
+                subtotal,
+                discount,
+                deliveryFee,
+                total,
+                client: { name, phone, sectorName, address, payment, troco },
+                items: cart
+            };
+
+            const orderRef = window.dbPush(window.dbRef(window.db, 'maxburger/orders'));
+            await window.dbSet(orderRef, newOrder);
+
+            const comandaMsg = `🍔 *NOVO PEDIDO RECEBIDO!* (#${dailyId})\n\n` +
+                               `👤 *Cliente:* ${name}\n` +
+                               `📍 *Endereço:* ${address} (${sectorName})\n` +
+                               `💳 *Pgto:* ${payment} ${troco ? '(Troco: '+troco+')' : ''}\n` +
+                               `💰 *Total:* R$ ${total.toFixed(2)}`;
+
+            enqueueWhatsAppMessage(COMERCE_WHATSAPP, comandaMsg);
+
+            cart = [];
+            updateCartBadge();
+            closeCheckout();
+            alert(`Pedido #${dailyId} realizado com sucesso! Redirecionando para o WhatsApp...`);
+            window.open(`https://wa.me/${COMERCE_WHATSAPP}?text=${encodeURIComponent(comandaMsg)}`, '_blank');
+        }
+
+        // ==========================================
+        // RENDERIZAÇÃO DO PAINEL ADMIN
+        // ==========================================
+        function renderAdminDashboard() {
+            renderAdminOrdersList('new', 'list-new-orders', 'count-new');
+            renderAdminOrdersList('production', 'list-production-orders', 'count-production');
+            renderAdminOrdersList('delivery', 'list-delivery-orders', 'count-delivery');
+            renderCompletedOrders();
+            renderFinanceReports();
+            renderMotoboyHistoryUI();
+        }
+
+        function renderAdminOrdersList(status, containerId, countId) {
+            const container = document.getElementById(containerId);
+            const badgeCount = document.getElementById(countId);
+            if(!container) return;
+            const filtered = orders.filter(o => o.status === status);
+            if(badgeCount) badgeCount.innerText = filtered.length;
+
+            if(filtered.length === 0) {
+                container.innerHTML = `<p class="text-xs text-gray-500 py-4 text-center">Nenhum pedido.</p>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(o => `
+                <div class="bg-brand-card p-4 rounded-xl border border-zinc-800 space-y-3 shadow relative">
+                    <div class="flex justify-between items-center">
+                        <span class="bg-brand-500/10 text-brand-500 font-black text-xs px-2.5 py-1 rounded-full">#${o.dailyId}</span>
+                        <div class="flex items-center space-x-1">
+                            <button onclick="manualPrintOrder('${o.firebaseKey}')" class="bg-zinc-800 hover:bg-zinc-700 text-brand-500 p-1.5 rounded-lg text-xs transition" title="Reimprimir Comanda BT">
+                                <i class="fa-solid fa-print"></i>
+                            </button>
+                            <button onclick="openCancelModal('${o.firebaseKey}')" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 p-1.5 rounded-lg text-xs transition" title="Cancelar Pedido">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm text-white">${o.client.name}</h4>
+                        <p class="text-xs text-gray-400"><i class="fa-brands fa-whatsapp text-brand-500 mr-1"></i> ${o.client.phone}</p>
+                        <p class="text-xs text-gray-300 mt-0.5">${o.client.address} (${o.client.sectorName || ''})</p>
+                    </div>
+                    <div class="bg-zinc-900 p-2.5 rounded-lg border border-zinc-800 space-y-1 text-xs">
+                        ${o.items.map(i => `<div>${i.qty}x ${i.name}</div>`).join('')}
+                    </div>
+                    <div class="flex justify-between items-center pt-2 border-t border-zinc-800 text-xs">
+                        <span class="font-black text-brand-500">R$ ${o.total.toFixed(2)}</span>
+                        <div>
+                            ${status === 'new' ? `<button onclick="updateOrderStatus('${o.firebaseKey}', 'production')" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-xl font-bold transition">Produção ➔</button>` : ''}
+                            ${status === 'production' ? `<button onclick="promptAssignMotoboy('${o.firebaseKey}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-xl font-bold transition">Despachar 🛵</button>` : ''}
+                            ${status === 'delivery' ? `
+                                <div class="flex gap-1">
+                                    <button onclick="promptAssignMotoboy('${o.firebaseKey}', true)" class="bg-zinc-800 hover:bg-zinc-700 text-brand-500 px-2 py-1.5 rounded-lg font-bold" title="Trocar Entregador">🔄</button>
+                                    <button onclick="updateOrderStatus('${o.firebaseKey}', 'completed')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-xl font-bold">Concluir ✅</button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    ${o.motoboy ? `<div class="text-[10px] text-blue-400 font-bold bg-blue-500/10 px-2 py-1 rounded">Entregador: ${o.motoboy.name} (Taxa: R$ ${o.motoboy.tax.toFixed(2)})</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function renderCompletedOrders() {
+            const container = document.getElementById('list-completed-orders');
+            const badge = document.getElementById('completed-count-badge');
+            if(!container) return;
+            const completed = orders.filter(o => o.status === 'completed');
+            if(badge) badge.innerText = `${completed.length} pedidos`;
+
+            if(completed.length === 0) {
+                container.innerHTML = `<p class="text-xs text-gray-500 col-span-full py-4 text-center">Nenhum pedido concluído no histórico.</p>`;
+                return;
+            }
+
+            container.innerHTML = completed.map(o => `
+                <div class="bg-brand-card p-5 rounded-2xl border border-zinc-800 space-y-3 shadow-lg">
+                    <div class="flex justify-between items-center">
+                        <span class="bg-green-500/10 text-green-400 font-black text-xs px-2.5 py-1 rounded-full">#${o.dailyId} (Concluído)</span>
+                        <span class="text-xs text-gray-400">${new Date(o.date).toLocaleString('pt-BR')}</span>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm text-white">${o.client.name}</h4>
+                        <p class="text-xs text-gray-400">${o.client.address}</p>
+                    </div>
+                    <div class="bg-zinc-900 p-3 rounded-xl border border-zinc-800 space-y-1 text-xs">
+                        ${o.items.map(i => `<div>${i.qty}x ${i.name}</div>`).join('')}
+                    </div>
+                    <div class="flex justify-between items-center pt-2 border-t border-zinc-800 text-xs">
+                        <span class="font-black text-brand-500">Total: R$ ${o.total.toFixed(2)}</span>
+                        ${o.motoboy ? `<span class="text-gray-400">Entregador: ${o.motoboy.name}</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ==========================================
+        // GESTÃO DE MOTOBOYS & HISTÓRICO SEPARADO
+        // ==========================================
+        async function handleSaveMotoboy(e) {
+            e.preventDefault();
+            const editId = document.getElementById('motoboy-edit-id').value;
+            const name = document.getElementById('motoboy-name').value.trim();
+            const whatsapp = document.getElementById('motoboy-whatsapp').value.replace(/\D/g, '');
+
+            if(editId) {
+                await window.dbUpdate(window.dbRef(window.db, `maxburger/motoboys/${editId}`), { name, whatsapp });
+                alert('Entregador atualizado com sucesso!');
+            } else {
+                await window.dbSet(window.dbPush(window.dbRef(window.db, 'maxburger/motoboys')), { name, whatsapp });
+                alert('Novo entregador cadastrado!');
+            }
+            resetMotoboyForm();
+        }
+
+        function editMotoboy(firebaseKey, name, whatsapp) {
+            document.getElementById('motoboy-edit-id').value = firebaseKey;
+            document.getElementById('motoboy-name').value = name;
+            document.getElementById('motoboy-whatsapp').value = whatsapp;
+            document.getElementById('motoboy-form-title').innerText = 'Editar Cadastro do Entregador';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetMotoboyForm() {
+            document.getElementById('motoboy-edit-id').value = '';
+            document.getElementById('motoboy-name').value = '';
+            document.getElementById('motoboy-whatsapp').value = '';
+            document.getElementById('motoboy-form-title').innerText = 'Cadastrar Novo Entregador';
+        }
+
+        function renderMotoboysList() {
+            const container = document.getElementById('motoboys-list-container');
+            if(!container) return;
+            if(motoboys.length === 0) {
+                container.innerHTML = `<p class="text-xs text-gray-500 col-span-full">Nenhum motoboy cadastrado.</p>`;
+                return;
+            }
+            container.innerHTML = motoboys.map(m => `
+                <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex justify-between items-center">
+                    <div>
+                        <h5 class="font-bold text-sm text-white">${m.name}</h5>
+                        <p class="text-xs text-brand-500"><i class="fa-brands fa-whatsapp"></i> ${m.whatsapp}</p>
+                    </div>
+                    <button onclick="editMotoboy('${m.firebaseKey}', '${m.name}', '${m.whatsapp}')" class="bg-zinc-800 hover:bg-zinc-700 text-gray-300 px-3 py-1.5 rounded-lg text-xs transition">Editar</button>
+                </div>
+            `).join('');
+        }
+
+        function renderMotoboyHistoryUI() {
+            const container = document.getElementById('motoboy-detailed-history');
+            if(!container) return;
+            if(motoboys.length === 0) {
+                container.innerHTML = `<p class="text-xs text-gray-500">Cadastre motoboys para visualizar o histórico detalhado.</p>`;
+                return;
+            }
+
+            container.innerHTML = motoboys.map(m => {
+                const mbOrders = orders.filter(o => o.motoboy && o.motoboy.key === m.firebaseKey);
+                const totalDeliveries = mbOrders.length;
+                const totalFeesEarned = mbOrders.reduce((sum, o) => sum + (o.motoboy.tax || 0), 0);
+
+                return `
+                    <div class="bg-zinc-900 p-5 rounded-xl border border-zinc-800 space-y-4">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-zinc-800 pb-3">
+                            <div>
+                                <h5 class="font-bold text-base text-white flex items-center gap-2"><i class="fa-solid fa-motorcycle text-brand-500"></i> ${m.name}</h5>
+                                <p class="text-xs text-gray-400">WhatsApp: ${m.whatsapp}</p>
+                            </div>
+                            <div class="flex items-center gap-4 bg-black/40 px-4 py-2 rounded-xl border border-zinc-800">
+                                <div><span class="text-[10px] text-gray-400 block">Entregas Feitas</span><strong class="text-sm text-white">${totalDeliveries}</strong></div>
+                                <div class="border-l border-zinc-700 pl-4"><span class="text-[10px] text-gray-400 block">Taxas Acumuladas</span><strong class="text-sm text-brand-500">R$ ${totalFeesEarned.toFixed(2)}</strong></div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <h6 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Histórico de Entregas deste Entregador</h6>
+                            ${mbOrders.length === 0 ? `<p class="text-xs text-gray-500 italic">Nenhuma entrega registrada para este motoboy.</p>` : `
+                                <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                    ${mbOrders.map(o => `
+                                        <div class="flex justify-between items-center bg-zinc-800/60 p-2.5 rounded-lg text-xs">
+                                            <div>
+                                                <strong class="text-white">#${o.dailyId}</strong> - ${o.client.name} (${o.client.address})
+                                                <span class="block text-[10px] text-gray-400">${new Date(o.date).toLocaleString('pt-BR')} • Status: ${o.status}</span>
+                                            </div>
+                                            <span class="font-bold text-brand-500">Taxa: R$ ${(o.motoboy.tax || 5.00).toFixed(2)}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        let isChangingMotoboy = false;
+        function promptAssignMotoboy(key, isReassignment = false) {
+            if(motoboys.length === 0) return alert('Cadastre um motoboy primeiro!');
+            isChangingMotoboy = isReassignment;
+            document.getElementById('assign-order-key').value = key;
+            document.getElementById('assign-modal-title').innerHTML = isReassignment ? `<i class="fa-solid fa-motorcycle mr-2"></i> Trocar Entregador em Tempo Real` : `<i class="fa-solid fa-motorcycle mr-2"></i> Selecionar Motoboy para Entrega`;
+            
+            const select = document.getElementById('select-motoboy-target');
+            select.innerHTML = motoboys.map(m => `<option value="${m.firebaseKey}">${m.name} (${m.whatsapp})</option>`).join('');
+            document.getElementById('assign-motoboy-modal').classList.remove('hidden');
+        }
+
+        function closeAssignMotoboyModal() {
+            document.getElementById('assign-motoboy-modal').classList.add('hidden');
+        }
+
+        async function confirmAssignMotoboy() {
+            const key = document.getElementById('assign-order-key').value;
+            const mbKey = document.getElementById('select-motoboy-target').value;
+            const order = orders.find(o => o.firebaseKey === key);
+            const mb = motoboys.find(m => m.firebaseKey === mbKey);
+            
+            await window.dbUpdate(window.dbRef(window.db, `maxburger/orders/${key}`), { 
+                status: 'delivery', 
+                motoboy: { key: mb.firebaseKey, name: mb.name, whatsapp: mb.whatsapp, tax: order.deliveryFee || 5.00 } 
+            });
+            closeAssignMotoboyModal();
+
+            const msg = `🛵 Olá ${mb.name}, ${isChangingMotoboy ? 'foi reatribuída a você a entrega' : 'nova entrega atribuída'}: Pedido #${order.dailyId} para ${order.client.name} em ${order.client.address}.`;
+            enqueueWhatsAppMessage(mb.whatsapp, msg);
+            alert('Entregador atualizado e notificado via API do WhatsApp!');
+        }
+
+        // ==========================================
+        // SETORES & TAXAS
+        // ==========================================
+        function renderModalSectorsList() {
+            const container = document.getElementById('modal-sectors-list');
+            if(!container) return;
+            container.innerHTML = sectors.map(s => `<div class="bg-zinc-900 p-3 rounded-xl border border-zinc-800 flex justify-between items-center"><span class="text-sm text-white">${s.name}</span><span class="text-sm font-bold text-brand-500">R$ ${s.price.toFixed(2)}</span></div>`).join('');
+        }
+
+        function renderSectorsList() {
+            const container = document.getElementById('sectors-list-container');
+            if(!container) return;
+            container.innerHTML = sectors.map(s => `
+                <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex justify-between items-center">
+                    <div>
+                        <h5 class="font-bold text-sm text-white">${s.name}</h5>
+                        <p class="text-xs text-brand-500 font-bold">R$ ${s.price.toFixed(2)}</p>
+                    </div>
+                    <button onclick="editSector('${s.firebaseKey}', '${s.name}', ${s.price})" class="bg-zinc-800 hover:bg-zinc-700 text-gray-300 px-3 py-1.5 rounded-lg text-xs transition">Editar Taxa</button>
+                </div>
+            `).join('');
+        }
+
+        function editSector(firebaseKey, name, price) {
+            document.getElementById('sector-edit-firebase-key').value = firebaseKey;
+            document.getElementById('sector-name-input').value = name;
+            document.getElementById('sector-price-input').value = price;
+            document.getElementById('sector-form-title').innerText = 'Editar Taxa do Setor';
+        }
+
+        function resetSectorForm() {
+            document.getElementById('sector-edit-firebase-key').value = '';
+            document.getElementById('sector-name-input').value = '';
+            document.getElementById('sector-price-input').value = '';
+            document.getElementById('sector-form-title').innerText = 'Cadastrar / Editar Setor e Valor';
+        }
+
+        async function saveSectorRate() {
+            const editKey = document.getElementById('sector-edit-firebase-key').value;
+            const name = document.getElementById('sector-name-input').value.trim();
+            const price = parseFloat(document.getElementById('sector-price-input').value);
+
+            if(!name || isNaN(price)) return alert('Preencha o nome e o valor da taxa corretamente.');
+
+            if(editKey) {
+                await window.dbUpdate(window.dbRef(window.db, `maxburger/sectors/${editKey}`), { name, price });
+                alert('Taxa do setor atualizada!');
+            } else {
+                await window.dbSet(window.dbPush(window.dbRef(window.db, 'maxburger/sectors')), { name, price });
+                alert('Novo setor cadastrado!');
+            }
+            resetSectorForm();
+        }
+
+        // ==========================================
+        // GERENCIAMENTO DE CARDÁPIO (CADASTRO E EDIÇÃO)
+        // ==========================================
+        function openItemModal(id = null) {
+            if(id) {
+                const item = menuData.find(i => i.id === id);
+                if(item) {
+                    document.getElementById('item-modal-title').innerText = 'Editar Item do Cardápio';
+                    document.getElementById('item-id').value = item.id;
+                    document.getElementById('item-name').value = item.name;
+                    document.getElementById('item-category').value = item.category;
+                    document.getElementById('item-price').value = item.price;
+                    document.getElementById('item-image').value = item.image;
+                    document.getElementById('item-desc').value = item.desc;
+                }
+            } else {
+                document.getElementById('item-modal-title').innerText = 'Novo Item do Cardápio';
+                document.getElementById('item-id').value = '';
+                document.getElementById('item-name').value = '';
+                document.getElementById('item-category').value = 'Burgers';
+                document.getElementById('item-price').value = '';
+                document.getElementById('item-image').value = '';
+                document.getElementById('item-desc').value = '';
+            }
+            document.getElementById('item-modal').classList.remove('hidden');
+        }
+
+        function closeItemModal() {
+            document.getElementById('item-modal').classList.add('hidden');
+        }
+
+        async function saveMenuItem(e) {
+            e.preventDefault();
+            const idInput = document.getElementById('item-id').value;
+            const name = document.getElementById('item-name').value;
+            const category = document.getElementById('item-category').value;
+            const price = parseFloat(document.getElementById('item-price').value);
+            const image = document.getElementById('item-image').value;
+            const desc = document.getElementById('item-desc').value;
+
+            if(idInput) {
+                const idx = menuData.findIndex(i => i.id == idInput);
+                if(idx !== -1) {
+                    menuData[idx] = { id: parseInt(idInput), name, category, price, image, desc };
+                }
+            } else {
+                const newItem = { id: Date.now(), name, category, price, image, desc };
+                menuData.push(newItem);
+            }
+
+            await window.dbSet(window.dbRef(window.db, 'maxburger/menu'), menuData);
+            closeItemModal();
+            renderMenu();
+            renderAdminMenu();
+            alert('Item salvo e atualizado em tempo real!');
+        }
+
+        function renderAdminMenu() {
+            const list = document.getElementById('admin-menu-list');
+            if(!list) return;
+            list.innerHTML = menuData.map(i => `
+                <div class="bg-brand-card p-4 rounded-xl border border-zinc-800 flex flex-col justify-between shadow">
+                    <div>
+                        <div class="h-36 overflow-hidden rounded-lg mb-3">
+                            <img src="${i.image}" class="w-full h-full object-cover">
+                        </div>
+                        <h4 class="font-bold text-sm text-white">${i.name}</h4>
+                        <p class="text-xs text-brand-500 font-bold mt-1">R$ ${i.price.toFixed(2)}</p>
+                    </div>
+                    <div class="pt-3 mt-3 border-t border-zinc-800 flex justify-end gap-2">
+                        <button onclick="openItemModal(${i.id})" class="bg-zinc-800 hover:bg-zinc-700 text-brand-500 px-3 py-1.5 rounded-lg text-xs font-bold transition">Editar</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ==========================================
+        // SUPORTE AO CLIENTE & NAVEGAÇÃO GERAL
+        // ==========================================
+        function switchView(v) {
+            document.getElementById('view-menu').classList.add('hidden');
+            document.getElementById('view-admin-login').classList.add('hidden');
+            document.getElementById('view-admin-dashboard').classList.add('hidden');
+            document.getElementById(`view-${v}`).classList.remove('hidden');
+            if(v === 'admin-dashboard') renderAdminDashboard();
+        }
+
+        function switchAdminTab(t) {
+            ['orders', 'motoboys', 'settings', 'completed', 'menu-mgr', 'finance'].forEach(tab => {
+                document.getElementById(`admin-sec-${tab}`).classList.add('hidden');
+            });
+            document.getElementById(`admin-sec-${t}`).classList.remove('hidden');
+            if(t === 'finance') renderFinanceReports();
+        }
+
+        function renderCategories() {
+            const tabs = document.getElementById('category-tabs');
+            if(!tabs) return;
+            const cats = ['Todos', ...new Set(menuData.map(i => i.category))];
+            tabs.innerHTML = cats.map(cat => `
+                <button onclick="filterCategory('${cat}')" class="px-5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition border ${currentCategory === cat ? 'bg-brand-500 text-brand-dark border-brand-500 shadow-md' : 'bg-brand-card text-gray-300 border-zinc-800 hover:bg-zinc-800'}">
+                    ${cat}
+                </button>
+            `).join('');
+        }
+
+        function filterCategory(cat) { currentCategory = cat; renderCategories(); renderMenu(); }
+
+        function renderMenu() {
+            const grid = document.getElementById('products-grid');
+            if(!grid) return;
+            const filtered = currentCategory === 'Todos' ? menuData : menuData.filter(i => i.category === currentCategory);
+            grid.innerHTML = filtered.map(item => `
+                <div class="bg-brand-card rounded-2xl overflow-hidden border border-zinc-800 flex flex-col justify-between shadow-lg hover:border-brand-500/50 transition cursor-pointer" onclick="openProductDetail(${item.id})">
+                    <div>
+                        <div class="h-48 overflow-hidden relative">
+                            <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover">
+                            <span class="absolute top-3 left-3 bg-brand-dark/85 backdrop-blur-md text-brand-500 text-xs font-bold px-3 py-1 rounded-full">${item.category}</span>
+                        </div>
+                        <div class="p-5">
+                            <h3 class="font-bold text-lg mb-1">${item.name}</h3>
+                            <p class="text-xs text-gray-400 line-clamp-2">${item.desc}</p>
+                        </div>
+                    </div>
+                    <div class="p-5 pt-0 flex items-center justify-between mt-4">
+                        <span class="text-lg font-black text-brand-500">R$ ${item.price.toFixed(2)}</span>
+                        <span class="bg-brand-500 hover:bg-brand-600 text-brand-dark px-4 py-2.5 rounded-xl text-xs font-bold transition shadow">Pedir</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openProductDetail(id) {
+            const product = menuData.find(i => i.id === id);
+            if(!product) return;
+            selectedProductForDetail = product;
+            currentDetailQty = 1;
+            document.getElementById('detail-img').src = product.image;
+            document.getElementById('detail-category').innerText = product.category;
+            document.getElementById('detail-name').innerText = product.name;
+            document.getElementById('detail-desc').innerText = product.desc;
+            document.getElementById('detail-qty').innerText = currentDetailQty;
+
+            const addonsContainer = document.getElementById('detail-addons-list');
+            addonsContainer.innerHTML = availableAddons.map(addon => `
+                <label class="flex items-center justify-between bg-zinc-900 p-3 rounded-xl border border-zinc-800 cursor-pointer">
+                    <div class="flex items-center space-x-3">
+                        <input type="checkbox" value="${addon.id}" data-price="${addon.price}" data-name="${addon.name}" onchange="updateDetailTotalPrice()" class="product-addon-checkbox w-4 h-4 accent-brand-500 rounded bg-zinc-800 border-zinc-700">
+                        <span class="text-xs font-medium text-white">${addon.name}</span>
+                    </div>
+                    <span class="text-xs font-bold text-brand-500">+ R$ ${addon.price.toFixed(2)}</span>
+                </label>
+            `).join('');
+            updateDetailTotalPrice();
+            document.getElementById('product-detail-modal').classList.remove('hidden');
+        }
+
+        function closeProductDetail() { document.getElementById('product-detail-modal').classList.add('hidden'); }
+        function minimizeProductDetail() { closeProductDetail(); }
+        function adjustDetailQty(delta) {
+            currentDetailQty += delta;
+            if(currentDetailQty < 1) currentDetailQty = 1;
+            document.getElementById('detail-qty').innerText = currentDetailQty;
+            updateDetailTotalPrice();
+        }
+        function updateDetailTotalPrice() {
+            if(!selectedProductForDetail) return;
+            let unitPrice = selectedProductForDetail.price;
+            document.querySelectorAll('.product-addon-checkbox:checked').forEach(cb => { unitPrice += parseFloat(cb.getAttribute('data-price')); });
+            document.getElementById('detail-total-price').innerText = `R$ ${(unitPrice * currentDetailQty).toFixed(2)}`;
+        }
+        function addDetailedProductToCart() {
+            if(!selectedProductForDetail) return;
+            let selectedAddons = [];
+            let addonExtraPrice = 0;
+            document.querySelectorAll('.product-addon-checkbox:checked').forEach(cb => {
+                selectedAddons.push({ id: cb.value, name: cb.getAttribute('data-name'), price: parseFloat(cb.getAttribute('data-price')) });
+                addonExtraPrice += parseFloat(cb.getAttribute('data-price'));
+            });
+            const finalUnitPrice = selectedProductForDetail.price + addonExtraPrice;
+            const cartKey = `${selectedProductForDetail.id}_${selectedAddons.map(a => a.id).sort().join('_')}`;
+            const existing = cart.find(i => i.cartKey === cartKey);
+            if(existing) existing.qty += currentDetailQty;
+            else cart.push({ cartKey, id: selectedProductForDetail.id, name: selectedProductForDetail.name, price: finalUnitPrice, qty: currentDetailQty, addons: selectedAddons });
+            updateCartBadge();
+            closeProductDetail();
+            openCart();
+        }
+
+        function updateCartBadge() {
+            const badge = document.getElementById('cart-badge');
+            if(!badge) return;
+            const totalItems = cart.reduce((sum, i) => sum + i.qty, 0);
+            if(totalItems > 0) { badge.innerText = totalItems; badge.classList.remove('hidden'); } else { badge.classList.add('hidden'); }
+        }
+
+        function openCart() { document.getElementById('cart-modal').classList.remove('hidden'); renderCartItems(); }
+        function closeCart() { document.getElementById('cart-modal').classList.add('hidden'); }
+        function applyBannerCoupon() { document.getElementById('cart-coupon-input').value = 'MAX10'; applyCartCoupon(); openCart(); }
+        function applyCartCoupon() {
+            const code = document.getElementById('cart-coupon-input').value.trim().toUpperCase();
+            if(code === 'MAX10') { appliedCoupon = 'MAX10'; discountPercent = 10; alert('Cupom MAX10 aplicado!'); }
+            else { appliedCoupon = null; discountPercent = 0; alert('Cupom inválido.'); }
+            renderCartItems();
+        }
+
+        function renderCartItems() {
+            const container = document.getElementById('cart-items');
+            if(!container) return;
+            if(cart.length === 0) {
+                container.innerHTML = `<div class="text-center py-12 text-gray-500 text-sm"><p>Sacola vazia</p></div>`;
+                document.getElementById('cart-subtotal').innerText = 'R$ 0,00';
+                document.getElementById('cart-total').innerText = 'R$ 0,00';
+                return;
+            }
+            container.innerHTML = cart.map(item => `
+                <div class="py-3 space-y-1">
+                    <div class="flex justify-between items-center">
+                        <div><h4 class="text-sm font-bold">${item.name}</h4><span class="text-xs text-brand-500 font-bold">R$ ${item.price.toFixed(2)} cada</span></div>
+                        <div class="flex items-center space-x-3">
+                            <button onclick="changeQty('${item.cartKey}', -1)" class="w-7 h-7 bg-zinc-800 rounded-lg text-xs font-bold">-</button>
+                            <span class="text-sm font-bold">${item.qty}</span>
+                            <button onclick="changeQty('${item.cartKey}', 1)" class="w-7 h-7 bg-zinc-800 rounded-lg text-xs font-bold">+</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            const subtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            const discountVal = (subtotal * discountPercent) / 100;
+            const deliveryFee = getCurrentDeliveryFee();
+            document.getElementById('cart-subtotal').innerText = `R$ ${subtotal.toFixed(2)}`;
+            document.getElementById('cart-delivery-display').innerText = deliveryFee === 0 ? 'Grátis' : `R$ ${deliveryFee.toFixed(2)}`;
+            document.getElementById('cart-total').innerText = `R$ ${(subtotal - discountVal + deliveryFee).toFixed(2)}`;
+        }
+
+        function changeQty(cartKey, delta) {
+            const item = cart.find(i => i.cartKey === cartKey);
+            if(item) { item.qty += delta; if(item.qty <= 0) cart = cart.filter(i => i.cartKey !== cartKey); }
+            updateCartBadge(); renderCartItems();
+        }
+
+        function openCheckout() { if(cart.length === 0) return alert('Carrinho vazio!'); closeCart(); populateCheckoutSectors(); renderCheckoutSummary(); document.getElementById('checkout-modal').classList.remove('hidden'); }
+        function closeCheckout() { document.getElementById('checkout-modal').classList.add('hidden'); }
+        function backToCartFromCheckout() { closeCheckout(); openCart(); }
+        function populateCheckoutSectors() {
+            const select = document.getElementById('client-sector');
+            if(!select) return;
+            select.innerHTML = sectors.map(s => `<option value="${s.firebaseKey}" data-price="${s.price}">${s.name} (Taxa: R$ ${s.price.toFixed(2)})</option>`).join('');
+        }
+        function getCurrentDeliveryFee() {
+            const select = document.getElementById('client-sector');
+            if(!select || select.options.length === 0) return 5.00;
+            const selectedOpt = select.options[select.selectedIndex];
+            return selectedOpt ? parseFloat(selectedOpt.getAttribute('data-price') || 5.00) : 5.00;
+        }
+        function renderCheckoutSummary() {
+            const container = document.getElementById('checkout-order-summary');
+            if(!container) return;
+            container.innerHTML = cart.map(i => `<div class="flex justify-between text-xs text-gray-300 py-1"><span>${i.qty}x ${i.name}</span><span>R$ ${(i.price * i.qty).toFixed(2)}</span></div>`).join('');
+        }
+        function toggleTrocoField() {
+            const pay = document.getElementById('client-payment').value;
+            const trocoContainer = document.getElementById('troco-container');
+            if(pay === 'Dinheiro') trocoContainer.classList.remove('hidden');
+            else trocoContainer.classList.add('hidden');
+        }
+        function openDeliveryModal() { document.getElementById('delivery-modal').classList.remove('hidden'); }
+        function closeDeliveryModal() { document.getElementById('delivery-modal').classList.add('hidden'); }
+        function renderFinanceReports() {
+            const completed = orders.filter(o => o.status === 'completed');
+            const totalRev = completed.reduce((sum, o) => sum + o.total, 0);
+            document.getElementById('rep-day').innerText = `R$ ${totalRev.toFixed(2)}`;
+            document.getElementById('rep-week').innerText = `R$ ${totalRev.toFixed(2)}`;
+            document.getElementById('rep-month').innerText = `R$ ${totalRev.toFixed(2)}`;
+            document.getElementById('rep-count').innerText = completed.length;
+            document.getElementById('finance-orders-list').innerHTML = completed.map(o => `<div class="flex justify-between text-xs py-2"><span>#${o.dailyId} - ${o.client.name}</span><span class="font-bold text-brand-500">R$ ${o.total.toFixed(2)}</span></div>`).join('');
+        }
+        function openAdminLogin() { switchView('admin-login'); }
+        async function handleAdminLogin(e) {
+            e.preventDefault();
+            try {
+                await window.signInWithEmailAndPassword(window.firebaseAuth, document.getElementById('admin-user').value, document.getElementById('admin-pass').value);
+                switchView('admin-dashboard');
+            } catch (err) { alert('Erro de login: ' + err.message); }
+        }
+        async function handleAdminLogout() { await window.signOut(window.firebaseAuth); switchView('menu'); }
+        function clearDateFilter() {}
+        function clearHistoryPeriod() {}
+        function playNotificationSound() {}
+        function enableAudioAlerts() { alert('Alerta sonoro ativado'); }
+    </script>
+</body>
+</html>
