@@ -1,1207 +1,265 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="dark">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Max Burger & Grill • Cardápio Digital & Pedidos</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Max Designer Digital • Rádio & Versículos</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase Compat SDKs (App & Firestore) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <!-- Google Fonts -->
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #090d16 0%, #151c2f 50%, #1e1b4b 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+        }
     </style>
 </head>
-<body class="bg-zinc-950 text-zinc-100 min-h-screen pb-24 selection:bg-brand-500 selection:text-white">
+<body class="flex flex-col items-center justify-between p-4 md:p-8">
 
-    <!-- Header / Navbar -->
-    <header class="sticky top-0 z-40 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-900">
-        <div class="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
-                    <i class="fa-solid fa-burger text-white text-lg"></i>
-                </div>
-                <div>
-                    <h1 class="font-extrabold text-base tracking-tight text-white flex items-center gap-1.5">
-                        Max Burger & Grill
-                        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Estabelecimento Aberto"></span>
-                    </h1>
-                    <p class="text-xs text-zinc-400">Artesanal na Brasa • Palmas - TO</p>
-                </div>
+    <!-- Container Central da Página -->
+    <main class="w-full max-w-md mx-auto space-y-6 my-auto">
+        
+        <!-- Bloco de Perfil / Identidade -->
+        <header class="text-center space-y-3">
+            <div class="w-24 h-24 mx-auto rounded-full p-1 bg-gradient-to-tr from-amber-500 via-orange-500 to-indigo-600 shadow-2xl">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80" alt="Max Designer Digital" class="w-full h-full object-cover rounded-full">
             </div>
-            
-            <div class="flex items-center space-x-2">
-                <button onclick="switchView('admin')" class="w-10 h-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 flex items-center justify-center text-zinc-300 transition" title="Painel Administrativo">
-                    <i class="fa-solid fa-gear text-sm"></i>
-                </button>
-                <button onclick="openCart()" class="relative w-10 h-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 flex items-center justify-center text-zinc-300 transition" title="Carrinho">
-                    <i class="fa-solid fa-bag-shopping text-sm"></i>
-                    <span id="cart-badge" class="absolute -top-1 -right-1 w-5 h-5 bg-amber-500 text-zinc-950 font-black text-[10px] rounded-full flex items-center justify-center hidden">0</span>
-                </button>
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-white">Max Designer Digital</h1>
+                <p class="text-xs uppercase tracking-widest text-amber-400 font-semibold mt-1">Palmas, TO • @maxwellber_63</p>
             </div>
-        </div>
-    </header>
+        </header>
 
-    <!-- Main Container -->
-    <main class="max-w-4xl mx-auto px-4 py-6">
-
-        <!-- VIEW: MENU (Cardápio) -->
-        <div id="view-menu" class="space-y-6">
-            <!-- Banner / Avisos -->
-            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-zinc-900 border border-amber-500/20 p-5 flex items-center justify-between">
-                <div class="space-y-1 z-10">
-                    <span class="bg-amber-500/20 text-amber-400 font-bold text-[10px] uppercase px-2.5 py-1 rounded-full border border-amber-500/30">Delivery & Retirada</span>
-                    <h2 class="font-bold text-lg text-white">Peça o verdadeiro burger na brasa! 🔥</h2>
-                    <p class="text-xs text-zinc-400">Tempo estimado de entrega: <strong class="text-zinc-200">35 - 50 min</strong></p>
-                </div>
-                <div class="hidden sm:flex w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-500/30 items-center justify-center text-amber-500 text-2xl shadow-inner">
-                    <i class="fa-solid fa-fire-flame-curved"></i>
-                </div>
-            </div>
-
-            <!-- Categories Filter -->
-            <div class="flex items-center space-x-2 overflow-x-auto hide-scrollbar pb-1">
-                <button onclick="filterCategory('all')" id="cat-btn-all" class="category-btn whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition bg-amber-500 text-zinc-950 shadow-lg shadow-amber-500/20">Todos</button>
-                <button onclick="filterCategory('Burgers')" id="cat-btn-Burgers" class="category-btn whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition bg-zinc-900 text-zinc-400 hover:bg-zinc-800 border border-zinc-800">Burgers Na Brasa</button>
-                <button onclick="filterCategory('Combos')" id="cat-btn-Combos" class="category-btn whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition bg-zinc-900 text-zinc-400 hover:bg-zinc-800 border border-zinc-800">Combos</button>
-                <button onclick="filterCategory('Acompanhamentos')" id="cat-btn-Acompanhamentos" class="category-btn whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition bg-zinc-900 text-zinc-400 hover:bg-zinc-800 border border-zinc-800">Acompanhamentos</button>
-                <button onclick="filterCategory('Bebidas')" id="cat-btn-Bebidas" class="category-btn whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition bg-zinc-900 text-zinc-400 hover:bg-zinc-800 border border-zinc-800">Bebidas</button>
-            </div>
-
-            <!-- Menu List Grid -->
-            <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <!-- Preenchido via JavaScript -->
-            </div>
-        </div>
-
-        <!-- VIEW: ADMIN (Painel Administrativo) -->
-        <div id="view-admin" class="hidden space-y-6">
-            <div class="flex items-center justify-between bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
-                <div class="flex items-center space-x-3">
-                    <button onclick="switchView('menu')" class="w-9 h-9 rounded-xl bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-300 transition">
-                        <i class="fa-solid fa-arrow-left text-xs"></i>
-                    </button>
+        <!-- Seção 1: Rádio Sertanejo Raiz (Clássicos Nacionais) -->
+        <section class="glass-card rounded-2xl p-5 space-y-4 transition-all duration-300">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3.5">
+                    <!-- Indicador Visual de Transmissão -->
+                    <div class="relative flex h-3.5 w-3.5 items-center justify-center">
+                        <span id="radio-pulse" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75 hidden"></span>
+                        <span id="radio-dot" class="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                    </div>
                     <div>
-                        <h2 class="font-bold text-sm text-white">Painel de Gestão & Pedidos</h2>
-                        <p class="text-xs text-zinc-400">Max Designer Digital • Gestão em Tempo Real</p>
+                        <h2 class="font-semibold text-sm text-amber-400">Rádio Sertanejo Raiz</h2>
+                        <p id="radio-status" class="text-xs text-slate-400">Ouça os clássicos nacionais</p>
                     </div>
                 </div>
-                <button onclick="requestBluetoothPrinter()" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/30 px-3 py-2 rounded-xl font-bold text-xs transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-print"></i> Conectar Impressora
+                <!-- Botão Play/Pause com Feedback Tátil -->
+                <button id="play-btn" onclick="toggleRadioPlayer()" aria-label="Controlar Rádio" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold p-3 rounded-full shadow-lg transition-transform transform active:scale-90 flex items-center justify-center w-11 h-11">
+                    ▶
                 </button>
             </div>
+            <!-- Elemento de Áudio (Stream ao Vivo) -->
+            <audio id="sertanejo-audio" preload="none">
+                <source src="https://player.painelcast.com:8432/live" type="audio/mpeg">
+                Seu navegador não suporta áudio HTML5.
+            </audio>
+        </section>
 
-            <!-- Admin Navigation Tabs -->
-            <div class="grid grid-cols-3 gap-2 bg-zinc-900 p-1.5 rounded-2xl border border-zinc-800">
-                <button onclick="switchAdminTab('orders')" id="admin-tab-orders" class="admin-tab py-2.5 rounded-xl font-bold text-xs text-center transition bg-amber-500 text-zinc-950">Pedidos</button>
-                <button onclick="switchAdminTab('menu')" id="admin-tab-menu" class="admin-tab py-2.5 rounded-xl font-bold text-xs text-center transition text-zinc-400 hover:text-white">Cardápio</button>
-                <button onclick="switchAdminTab('finance')" id="admin-tab-finance" class="admin-tab py-2.5 rounded-xl font-bold text-xs text-center transition text-zinc-400 hover:text-white">Relatórios & Caixa</button>
+        <!-- Seção 2: Versículos Bíblicos Infinitos (Integrado ao Firebase Firestore) -->
+        <section class="glass-card rounded-2xl p-6 space-y-4 text-center relative overflow-hidden">
+            <!-- Barra Decorativa Superior -->
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 via-indigo-500 to-purple-500"></div>
+            
+            <div class="flex justify-between items-center text-[11px] text-slate-400">
+                <span class="uppercase tracking-wider font-bold text-indigo-400 flex items-center gap-1">
+                    📖 Palavra Viva
+                </span>
+                <span class="bg-slate-800/90 px-2.5 py-1 rounded-full text-slate-300 border border-slate-700/50">
+                    Auto (15s) ↻
+                </span>
             </div>
 
-            <!-- TAB 1: ORDERS KANBAN -->
-            <div id="admin-content-orders" class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <!-- Novos -->
-                    <div class="bg-zinc-900/50 rounded-2xl p-4 border border-zinc-800">
-                        <h3 class="font-bold text-xs uppercase tracking-wider text-amber-500 mb-3 flex items-center justify-between">
-                            <span>Novos Pedidos</span>
-                            <span id="count-new" class="bg-amber-500/20 px-2 py-0.5 rounded-full text-[10px]">0</span>
-                        </h3>
-                        <div id="list-new-orders" class="space-y-3"></div>
-                    </div>
-                    <!-- Produção -->
-                    <div class="bg-zinc-900/50 rounded-2xl p-4 border border-zinc-800">
-                        <h3 class="font-bold text-xs uppercase tracking-wider text-orange-500 mb-3 flex items-center justify-between">
-                            <span>Em Produção</span>
-                            <span id="count-production" class="bg-orange-500/20 px-2 py-0.5 rounded-full text-[10px]">0</span>
-                        </h3>
-                        <div id="list-production-orders" class="space-y-3"></div>
-                    </div>
-                    <!-- Entrega -->
-                    <div class="bg-zinc-900/50 rounded-2xl p-4 border border-zinc-800">
-                        <h3 class="font-bold text-xs uppercase tracking-wider text-blue-500 mb-3 flex items-center justify-between">
-                            <span>Em Rota / Entrega</span>
-                            <span id="count-delivery" class="bg-blue-500/20 px-2 py-0.5 rounded-full text-[10px]">0</span>
-                        </h3>
-                        <div id="list-delivery-orders" class="space-y-3"></div>
-                    </div>
-                    <!-- Concluídos -->
-                    <div class="bg-zinc-900/50 rounded-2xl p-4 border border-zinc-800">
-                        <h3 class="font-bold text-xs uppercase tracking-wider text-emerald-500 mb-3 flex items-center justify-between">
-                            <span>Concluídos</span>
-                            <span id="count-completed" class="bg-emerald-500/20 px-2 py-0.5 rounded-full text-[10px]">0</span>
-                        </h3>
-                        <div id="list-completed-orders" class="space-y-3"></div>
-                    </div>
-                </div>
+            <!-- Caixa de Exibição do Versículo -->
+            <div class="min-h-[110px] flex flex-col justify-center items-center space-y-2.5 px-2">
+                <p id="bible-verse" class="text-sm md:text-base italic text-slate-200 leading-relaxed transition-opacity duration-500">
+                    "Carregando mensagens bíblicas..."
+                </p>
+                <p id="bible-ref" class="text-xs font-semibold text-amber-400 transition-opacity duration-500"></p>
             </div>
 
-            <!-- TAB 2: ADMIN MENU MANAGER -->
-            <div id="admin-content-menu" class="hidden space-y-4">
-                <div class="flex justify-between items-center">
-                    <h3 class="font-bold text-sm text-white">Gerenciar Produtos</h3>
-                    <button onclick="openItemModal()" class="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold text-xs px-4 py-2.5 rounded-xl transition shadow">
-                        <i class="fa-solid fa-plus mr-1"></i> Novo Item
-                    </button>
-                </div>
-                <div id="admin-menu-list" class="bg-zinc-900 rounded-2xl border border-zinc-800 divide-y divide-zinc-800">
-                    <!-- Preenchido via JS -->
-                </div>
+            <!-- Botão de Ação Manual -->
+            <div class="pt-1">
+                <button onclick="fetchNextVerseManual()" class="w-full bg-slate-800/80 hover:bg-slate-700 text-xs py-2.5 px-4 rounded-xl border border-slate-700 transition font-medium text-indigo-300 hover:text-indigo-200 flex items-center justify-center gap-2">
+                    <span>Próximo Versículo</span>
+                    <span class="text-amber-400">→</span>
+                </button>
             </div>
+        </section>
 
-            <!-- TAB 3: FINANCE & REPORTS -->
-            <div id="admin-content-finance" class="hidden space-y-4">
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
-                        <p class="text-[11px] text-zinc-400 uppercase font-bold">Hoje</p>
-                        <h4 id="rep-day" class="text-lg font-black text-amber-500 mt-1">R$ 0,00</h4>
-                    </div>
-                    <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
-                        <p class="text-[11px] text-zinc-400 uppercase font-bold">Últimos 7 Dias</p>
-                        <h4 id="rep-week" class="text-lg font-black text-white mt-1">R$ 0,00</h4>
-                    </div>
-                    <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
-                        <p class="text-[11px] text-zinc-400 uppercase font-bold">Este Mês</p>
-                        <h4 id="rep-month" class="text-lg font-black text-emerald-500 mt-1">R$ 0,00</h4>
-                    </div>
-                    <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
-                        <p class="text-[11px] text-zinc-400 uppercase font-bold">Total Pedidos</p>
-                        <h4 id="rep-count" class="text-lg font-black text-blue-500 mt-1">0</h4>
-                    </div>
-                </div>
-
-                <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 space-y-4">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                        <h3 class="font-bold text-sm text-white">Relatório Detalhado de Vendas</h3>
-                        <div class="flex items-center gap-2">
-                            <input type="date" id="finance-date-filter" onchange="renderFinanceReports()" class="bg-zinc-950 border border-zinc-800 text-xs text-white rounded-xl px-3 py-2 outline-none focus:border-amber-500">
-                            <button onclick="clearDateFilter()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs px-3 py-2 rounded-xl transition">Limpar Data</button>
-                        </div>
-                    </div>
-                    <div id="finance-orders-list" class="divide-y divide-zinc-800 max-h-64 overflow-y-auto">
-                        <!-- Preenchido via JS -->
-                    </div>
-                </div>
-
-                <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 space-y-3">
-                    <h3 class="font-bold text-sm text-white">Itens Mais Vendidos (Ranking)</h3>
-                    <div id="top-products-list" class="space-y-2">
-                        <!-- Preenchido via JS -->
-                    </div>
-                </div>
-
-                <div class="flex justify-end gap-3 pt-2">
-                    <button onclick="clearHistoryPeriod('day')" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold text-xs px-4 py-2.5 rounded-xl transition">Zerar Caixa do Dia</button>
-                    <button onclick="clearHistoryPeriod('all')" class="bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold text-xs px-4 py-2.5 rounded-xl transition border border-red-500/20">Zerar Todo Histórico</button>
-                </div>
-            </div>
-        </div>
+        <!-- Seção 3: Atalhos e Redes Sociais -->
+        <nav class="space-y-3">
+            <a href="https://instagram.com/maxwellber_63" target="_blank" rel="noopener noreferrer" class="glass-card flex items-center justify-center space-x-2 w-full py-3.5 px-4 rounded-xl font-medium hover:bg-slate-800/80 transition-all duration-200 text-sm">
+                <span>📸</span>
+                <span>Instagram Profissional</span>
+            </a>
+            <a href="https://wa.me/5563900000000" target="_blank" rel="noopener noreferrer" class="glass-card flex items-center justify-center space-x-2 w-full py-3.5 px-4 rounded-xl font-medium hover:bg-slate-800/80 transition-all duration-200 text-sm">
+                <span>💬</span>
+                <span>Orçamentos via WhatsApp</span>
+            </a>
+        </nav>
 
     </main>
 
-    <!-- MODAL: DETALHES DO ITEM / ADICIONAIS -->
-    <div id="item-detail-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
-        <div class="bg-zinc-900 w-full max-w-lg rounded-t-3xl sm:rounded-3xl border border-zinc-800 max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
-            <div id="modal-item-header" class="relative h-48 bg-zinc-800 flex-shrink-0">
-                <img id="modal-item-img" src="" alt="" class="w-full h-full object-cover">
-                <button onclick="closeItemDetailModal()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center transition">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-            <div class="p-5 overflow-y-auto space-y-4 flex-1">
-                <div>
-                    <h3 id="modal-item-name" class="font-extrabold text-lg text-white"></h3>
-                    <p id="modal-item-desc" class="text-xs text-zinc-400 mt-1"></p>
-                    <p id="modal-item-price" class="text-amber-500 font-black text-base mt-2"></p>
-                </div>
+    <!-- Rodapé -->
+    <footer class="mt-8 text-center text-xs text-slate-500">
+        <p>© 2026 Max Designer Digital • Todos os direitos reservados.</p>
+    </footer>
 
-                <div id="addons-section" class="space-y-3 pt-3 border-t border-zinc-800">
-                    <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-xs uppercase tracking-wider text-zinc-300">Adicionais & Turbinadas</h4>
-                        <span class="text-[10px] bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full">Opcional</span>
-                    </div>
-                    <div id="addons-list" class="space-y-2">
-                        <!-- Preenchido via JS -->
-                    </div>
-                </div>
-
-                <div class="space-y-2 pt-3 border-t border-zinc-800">
-                    <h4 class="font-bold text-xs uppercase tracking-wider text-zinc-300">Observações do Item</h4>
-                    <input type="text" id="modal-item-obs" placeholder="Ex: Sem cebola, ponto da carne bem passado..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-amber-500">
-                </div>
-            </div>
-            <div class="p-4 bg-zinc-950 border-t border-zinc-800 flex items-center gap-4">
-                <div class="flex items-center bg-zinc-900 border border-zinc-800 rounded-xl">
-                    <button onclick="adjustModalQty(-1)" class="w-10 h-10 flex items-center justify-center text-zinc-300 hover:text-white"><i class="fa-solid fa-minus text-xs"></i></button>
-                    <span id="modal-item-qty" class="w-8 text-center font-bold text-xs text-white">1</span>
-                    <button onclick="adjustModalQty(1)" class="w-10 h-10 flex items-center justify-center text-zinc-300 hover:text-white"><i class="fa-solid fa-plus text-xs"></i></button>
-                </div>
-                <button onclick="confirmAddToCart()" class="flex-1 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-extrabold text-xs py-3.5 rounded-xl transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2">
-                    <span>Adicionar ao Carrinho</span>
-                    <span id="modal-total-price">R$ 0,00</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: CARRINHO / CHECKOUT -->
-    <div id="cart-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
-        <div class="bg-zinc-900 w-full max-w-lg rounded-t-3xl sm:rounded-3xl border border-zinc-800 max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
-            <div class="p-4 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between">
-                <h3 class="font-bold text-sm text-white flex items-center gap-2">
-                    <i class="fa-solid fa-bag-shopping text-amber-500"></i> Seu Carrinho & Pedido
-                </h3>
-                <button onclick="closeCart()" class="w-8 h-8 rounded-xl bg-zinc-900 hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition">
-                    <i class="fa-solid fa-xmark text-xs"></i>
-                </button>
-            </div>
-
-            <div class="p-4 overflow-y-auto space-y-4 flex-1">
-                <!-- Itens do Carrinho -->
-                <div id="cart-items-list" class="space-y-3">
-                    <!-- Preenchido via JS -->
-                </div>
-
-                <!-- Cupom de Desconto -->
-                <div class="bg-zinc-950 p-3 rounded-2xl border border-zinc-800 space-y-2">
-                    <div class="flex gap-2">
-                        <input type="text" id="coupon-input" placeholder="Cupom de Desconto (ex: MAX10)" class="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white uppercase outline-none focus:border-amber-500">
-                        <button onclick="applyCoupon()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold text-xs px-4 py-2 rounded-xl transition">Aplicar</button>
-                    </div>
-                    <div id="coupon-msg" class="text-[11px]"></div>
-                </div>
-
-                <!-- Dados do Cliente & Entrega -->
-                <div class="space-y-3 pt-2">
-                    <h4 class="font-bold text-xs uppercase tracking-wider text-amber-500">Dados de Entrega & Contato</h4>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-[11px] text-zinc-400 mb-1">Seu Nome *</label>
-                            <input type="text" id="client-name" placeholder="Ex: Carlos Silva" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-amber-500">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] text-zinc-400 mb-1">WhatsApp / Telefone *</label>
-                            <input type="tel" id="client-phone" placeholder="Ex: 63 99999-9999" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-amber-500">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-[11px] text-zinc-400 mb-1">Setor / Bairro (Palmas - TO) *</label>
-                            <select id="client-sector" onchange="updateCheckoutTotals()" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-amber-500">
-                                <!-- Preenchido via JS -->
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[11px] text-zinc-400 mb-1">Endereço (Rua, Quadra, Lote/Nº) *</label>
-                            <input type="text" id="client-address" placeholder="Ex: Q 104 Norte, Alameda 2, Nº 15" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-amber-500">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                        <div>
-                            <label class="block text-[11px] text-zinc-400 mb-1">Forma de Pagamento *</label>
-                            <select id="client-payment" onchange="toggleTrocoInput()" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-amber-500">
-                                <option value="Pix">Pix (Chave CNPJ / Celular)</option>
-                                <option value="Cartão de Crédito">Cartão de Crédito (Na Entrega)</option>
-                                <option value="Cartão de Débito">Cartão de Débito (Na Entrega)</option>
-                                <option value="Dinheiro">Dinheiro (Espécie)</option>
-                            </select>
-                        </div>
-                        <div id="troco-wrapper" class="hidden">
-                            <label class="block text-[11px] text-zinc-400 mb-1">Troco para quanto?</label>
-                            <input type="text" id="client-troco" placeholder="Ex: R$ 100,00" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-amber-500">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Resumo de Valores -->
-                <div class="bg-zinc-950 p-4 rounded-2xl border border-zinc-800 space-y-1.5 text-xs">
-                    <div class="flex justify-between text-zinc-400">
-                        <span>Subtotal</span>
-                        <span id="summary-subtotal" class="font-bold text-white">R$ 0,00</span>
-                    </div>
-                    <div id="summary-discount-row" class="flex justify-between text-emerald-400 hidden">
-                        <span>Desconto</span>
-                        <span id="summary-discount">-R$ 0,00</span>
-                    </div>
-                    <div class="flex justify-between text-zinc-400">
-                        <span>Taxa de Entrega</span>
-                        <span id="summary-delivery" class="font-bold text-white">R$ 0,00</span>
-                    </div>
-                    <div class="pt-2 border-t border-zinc-800 flex justify-between text-sm">
-                        <span class="font-extrabold text-white">Total a Pagar</span>
-                        <span id="summary-total" class="font-black text-amber-500">R$ 0,00</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-4 bg-zinc-950 border-t border-zinc-800">
-                <button onclick="submitOrder(event)" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs py-3.5 rounded-xl transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2">
-                    <i class="fa-brands fa-whatsapp text-base"></i> Enviar Pedido via WhatsApp & Comanda
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: EDITAR / CRIAR ITEM DO CARDÁPIO (ADMIN) -->
-    <div id="item-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-zinc-900 w-full max-w-md rounded-3xl border border-zinc-800 p-6 space-y-4 shadow-2xl">
-            <h3 id="item-modal-title" class="font-bold text-sm text-white">Novo Item do Cardápio</h3>
-            <form onsubmit="saveMenuItem(event)" class="space-y-3">
-                <input type="hidden" id="item-id">
-                <div>
-                    <label class="block text-[11px] text-zinc-400 mb-1">Nome do Item *</label>
-                    <input type="text" id="item-name" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-amber-500">
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block text-[11px] text-zinc-400 mb-1">Categoria *</label>
-                        <select id="item-category" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-amber-500">
-                            <option value="Burgers">Burgers</option>
-                            <option value="Combos">Combos</option>
-                            <option value="Acompanhamentos">Acompanhamentos</option>
-                            <option value="Bebidas">Bebidas</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[11px] text-zinc-400 mb-1">Preço (R$) *</label>
-                        <input type="number" step="0.01" id="item-price" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-amber-500">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-[11px] text-zinc-400 mb-1">Tag (Opcional)</label>
-                    <input type="text" id="item-tag" placeholder="Ex: Mais Vendido, Na Brasa" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-amber-500">
-                </div>
-                <div>
-                    <label class="block text-[11px] text-zinc-400 mb-1">URL da Imagem *</label>
-                    <input type="url" id="item-image" required placeholder="https://..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-amber-500">
-                </div>
-                <div>
-                    <label class="block text-[11px] text-zinc-400 mb-1">Descrição do Item *</label>
-                    <textarea id="item-desc" rows="2" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-amber-500"></textarea>
-                </div>
-                <div class="flex gap-2 pt-2">
-                    <button type="button" onclick="closeItemModal()" class="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold text-xs py-2.5 rounded-xl transition">Cancelar</button>
-                    <button type="submit" class="flex-1 bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold text-xs py-2.5 rounded-xl transition shadow">Salvar Item</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-        import { getDatabase, ref, set, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
-
-        const firebaseConfig = {
-            databaseURL: "https://maxburger-default-rtdb.firebaseio.com/"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        window.db = db;
-        window.dbRef = ref;
-        window.dbSet = set;
-        window.dbPush = push;
-        window.dbOnValue = onValue;
-        window.dbRemove = remove;
-        window.dbUpdate = update;
-
-        // Inicializar ouvintes do Firebase
-        initFirebaseListeners();
-    </script>
-
-    <!-- App JavaScript Logic -->
+    <!-- Lógica JavaScript Reforçada e Organizada -->
     <script>
-        // Dados padrão do Cardápio caso o Firebase esteja vazio
-        let defaultMenu = [
-            { id: 1, name: "Max Burger Artesanal", category: "Burgers", price: 32.90, tag: "Mais Vendido", image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80", desc: "Pão brioche tostado na manteiga, blend 160g de carne bovina na brasa, cheddar cremoso derretido, bacon crocante artesanal e molho especial da casa." },
-            { id: 2, name: "Max Double Bacon Grill", category: "Burgers", price: 42.90, tag: "Duplo na Brasa", image: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?auto=format&fit=crop&w=600&q=80", desc: "Dois blends de 160g grelhados na brasa, dobro de queijo cheddar, tiras generosas de bacon defumado e cebola caramelizada." },
-            { id: 3, name: "Combo Max Supreme", category: "Combos", price: 54.90, tag: "Completo", image: "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?auto=format&fit=crop&w=600&q=80", desc: "Acompanha Max Burger Artesanal + Batata Frita Crinkles crocante + Refrigerante lata 350ml." },
-            { id: 4, name: "Batata Rústica com Cheddar & Bacon", category: "Acompanhamentos", price: 24.90, tag: "Porção", image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=600&q=80", desc: "Batatas fritas rústicas temperadas com ervas finas, cobertas com creme de cheddar derretido e bacon em cubos." },
-            { id: 5, name: "Coca-Cola Lata 350ml", category: "Bebidas", price: 6.50, tag: "Gelada", image: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=600&q=80", desc: "Lata 350ml gelada." }
-        ];
-
-        let defaultSectors = {
-            "Plano Diretor Sul (102 a 120 Sul)": 7.00,
-            "Plano Diretor Norte (104 a 210 Norte)": 8.00,
-            "Taquaralto": 12.00,
-            "Arse / Arso / ASRs": 9.00,
-            "Demais Setores Palmas": 10.00
+        /* ==========================================================
+           1. CONFIGURAÇÃO DO FIREBASE (FIRESTORE)
+           Substitua com as credenciais do seu console Firebase
+           ========================================================== */
+        const firebaseConfig = {
+            apiKey: "SUA_API_KEY",
+            authDomain: "seu-projeto.firebaseapp.com",
+            projectId: "seu-projeto-id",
+            storageBucket: "seu-projeto.appspot.com",
+            messagingSenderId: "SEU_SENDER_ID",
+            appId: "SEU_APP_ID"
         };
 
-        let defaultAddons = [
-            { id: 'bacon', name: 'Bacon Extra Crocante', price: 6.00 },
-            { id: 'cheddar', name: 'Extra Cheddar Cremoso', price: 5.00 },
-            { id: 'carne', name: 'Blend Extra 160g na Brasa', price: 12.00 },
-            { id: 'ovo', name: 'Ovo Frito na Chapa', price: 3.50 }
+        // Inicialização Segura do Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        /* ==========================================================
+           2. SISTEMA DE VERSÍCULOS BÍBLICOS (FIREBASE + INFINITO)
+           ========================================================== */
+        // Fallback local caso o Firebase demore ou esteja offline
+        const fallbackVerses = [
+            { text: "O Senhor é o meu pastor; nada me faltará.", ref: "Salmos 23:1" },
+            { text: "Tudo posso naquele que me fortalece.", ref: "Filipenses 4:13" },
+            { text: "Entrega o teu caminho ao Senhor; confia nele, e ele o fará.", ref: "Salmos 37:5" },
+            { text: "Lâmpada para os meus pés é a palavra tua, e luz para o meu caminho.", ref: "Salmos 119:105" },
+            { text: "Confia no Senhor de todo o teu coração e não te estribes no teu próprio entendimento.", ref: "Provérbios 3:5" }
         ];
 
-        let menuData = [...defaultMenu];
-        let sectorsData = {...defaultSectors};
-        let addonsData = [...defaultAddons];
-        let orders = [];
-        let cart = [];
-        let currentFilter = 'all';
-        let activeModalItem = null;
-        let appliedCoupon = null;
-        let discountPercent = 0;
-        let bluetoothCharacteristic = null;
-
-        // Inicialização de Listeners e Dados do Firebase
-        function initFirebaseListeners() {
-            setTimeout(() => {
-                if (!window.db) return;
-
-                // Sync Menu
-                window.dbOnValue(window.dbRef(window.db, 'maxburger/menu'), (snapshot) => {
-                    const val = snapshot.val();
-                    if (val) {
-                        menuData = val;
-                    } else {
-                        window.dbSet(window.dbRef(window.db, 'maxburger/menu'), defaultMenu);
-                        menuData = defaultMenu;
-                    }
-                    renderMenu();
-                    renderAdminMenu();
-                });
-
-                // Sync Orders
-                window.dbOnValue(window.dbRef(window.db, 'maxburger/orders'), (snapshot) => {
-                    const val = snapshot.val();
-                    if (val) {
-                        orders = Object.keys(val).map(key => ({
-                            firebaseKey: key,
-                            ...val[key]
-                        }));
-                    } else {
-                        orders = [];
-                    }
-                    renderAdminDashboard();
-                    renderFinanceReports();
-                });
-            }, 1000);
-
-            // Preencher Select de Setores
-            populateSectorsSelect();
-            renderMenu();
-        }
-
-        function populateSectorsSelect() {
-            const select = document.getElementById('client-sector');
-            if(!select) return;
-            select.innerHTML = Object.keys(sectorsData).map(sec => `
-                <option value="${sec}">${sec} (Taxa: R$ ${sectorsData[sec].toFixed(2)})</option>
-            `).join('');
-        }
-
-        function getCurrentDeliveryFee() {
-            const select = document.getElementById('client-sector');
-            if(!select) return 7.00;
-            const sector = select.value;
-            return sectorsData[sector] !== undefined ? sectorsData[sector] : 7.00;
-        }
-
-        // Navegação de Views
-        function switchView(viewName) {
-            document.getElementById('view-menu').classList.add('hidden');
-            document.getElementById('view-admin').classList.add('hidden');
-
-            if(viewName === 'menu') {
-                document.getElementById('view-menu').classList.remove('hidden');
-            } else if(viewName === 'admin') {
-                document.getElementById('view-admin').classList.remove('hidden');
-                switchAdminTab('orders');
-            }
-        }
-
-        function switchAdminTab(tabName) {
-            document.querySelectorAll('.admin-tab').forEach(b => {
-                b.className = 'admin-tab py-2.5 rounded-xl font-bold text-xs text-center transition text-zinc-400 hover:text-white';
-            });
-            document.getElementById(`admin-tab-${tabName}`).className = 'admin-tab py-2.5 rounded-xl font-bold text-xs text-center transition bg-amber-500 text-zinc-950';
-
-            document.getElementById('admin-content-orders').classList.add('hidden');
-            document.getElementById('admin-content-menu').classList.add('hidden');
-            document.getElementById('admin-content-finance').classList.add('hidden');
-
-            document.getElementById(`admin-content-${tabName}`).classList.remove('hidden');
-
-            if(tabName === 'finance') {
-                renderFinanceReports();
-            }
-        }
-
-        // Renderização do Cardápio
-        function filterCategory(category) {
-            currentFilter = category;
-            document.querySelectorAll('.category-btn').forEach(b => {
-                b.className = 'category-btn whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition bg-zinc-900 text-zinc-400 hover:bg-zinc-800 border border-zinc-800';
-            });
-            document.getElementById(`cat-btn-${category}`).className = 'category-btn whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition bg-amber-500 text-zinc-950 shadow-lg shadow-amber-500/20';
-            renderMenu();
-        }
-
-        function renderMenu() {
-            const grid = document.getElementById('menu-grid');
-            if(!grid) return;
-
-            const filtered = currentFilter === 'all' ? menuData : menuData.filter(i => i.category === currentFilter);
-
-            if(filtered.length === 0) {
-                grid.innerHTML = `<p class="text-xs text-zinc-500 col-span-full text-center py-8">Nenhum item encontrado nesta categoria.</p>`;
-                return;
-            }
-
-            grid.innerHTML = filtered.map(item => `
-                <div onclick="openItemDetailModal(${item.id})" class="bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-amber-500/50 rounded-3xl p-4 flex gap-4 cursor-pointer transition group shadow-lg">
-                    <img src="${item.image}" alt="${item.name}" class="w-24 h-24 rounded-2xl object-cover flex-shrink-0 group-hover:scale-105 transition duration-300">
-                    <div class="flex flex-col justify-between flex-1">
-                        <div>
-                            <div class="flex justify-between items-start gap-2">
-                                <h3 class="font-bold text-sm text-white group-hover:text-amber-500 transition">${item.name}</h3>
-                                ${item.tag ? `<span class="bg-amber-500/10 text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-500/20 whitespace-nowrap">${item.tag}</span>` : ''}
-                            </div>
-                            <p class="text-[11px] text-zinc-400 mt-1 line-clamp-2">${item.desc}</p>
-                        </div>
-                        <div class="flex justify-between items-center mt-2">
-                            <span class="font-black text-amber-500 text-sm">R$ ${item.price.toFixed(2)}</span>
-                            <span class="w-8 h-8 rounded-xl bg-zinc-800 group-hover:bg-amber-500 group-hover:text-zinc-950 text-zinc-300 flex items-center justify-center transition text-xs">
-                                <i class="fa-solid fa-plus"></i>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Modal de Detalhes e Adicionais do Item
-        let currentModalQty = 1;
-        let selectedAddons = {};
-
-        function openItemDetailModal(id) {
-            const item = menuData.find(i => i.id === id);
-            if(!item) return;
-            activeModalItem = item;
-            currentModalQty = 1;
-            selectedAddons = {};
-
-            document.getElementById('modal-item-img').src = item.image;
-            document.getElementById('modal-item-name').innerText = item.name;
-            document.getElementById('modal-item-desc').innerText = item.desc;
-            document.getElementById('modal-item-price').innerText = `R$ ${item.price.toFixed(2)}`;
-            document.getElementById('modal-item-qty').innerText = '1';
-            document.getElementById('modal-item-obs').value = '';
-
-            const addonsListEl = document.getElementById('addons-list');
-            addonsListEl.innerHTML = addonsData.map(a => `
-                <label class="flex items-center justify-between bg-zinc-950 p-2.5 rounded-xl border border-zinc-800 cursor-pointer hover:border-zinc-700 transition">
-                    <div class="flex items-center space-x-2.5">
-                        <input type="checkbox" onchange="toggleAddon('${a.id}', ${a.price})" class="w-4 h-4 rounded accent-amber-500 bg-zinc-900 border-zinc-800">
-                        <span class="text-xs text-zinc-300">${a.name}</span>
-                    </div>
-                    <span class="text-xs font-bold text-amber-500">+ R$ ${a.price.toFixed(2)}</span>
-                </label>
-            `).join('');
-
-            updateModalTotalPrice();
-            document.getElementById('item-detail-modal').classList.remove('hidden');
-        }
-
-        function closeItemDetailModal() {
-            document.getElementById('item-detail-modal').classList.add('hidden');
-        }
-
-        function adjustModalQty(delta) {
-            currentModalQty += delta;
-            if(currentModalQty < 1) currentModalQty = 1;
-            document.getElementById('modal-item-qty').innerText = currentModalQty;
-            updateModalTotalPrice();
-        }
-
-        function toggleAddon(addonId, price) {
-            if(selectedAddons[addonId]) {
-                delete selectedAddons[addonId];
-            } else {
-                const addonObj = addonsData.find(a => a.id === addonId);
-                selectedAddons[addonId] = addonObj;
-            }
-            updateModalTotalPrice();
-        }
-
-        function updateModalTotalPrice() {
-            if(!activeModalItem) return;
-            let addonsTotal = Object.values(selectedAddons).reduce((sum, a) => sum + a.price, 0);
-            let unitTotal = activeModalItem.price + addonsTotal;
-            let total = unitTotal * currentModalQty;
-            document.getElementById('modal-total-price').innerText = `R$ ${total.toFixed(2)}`;
-        }
-
-        function confirmAddToCart() {
-            if(!activeModalItem) return;
-            const obs = document.getElementById('modal-item-obs').value.trim();
-            const addonsArr = Object.values(selectedAddons);
-            const addonsTotal = addonsArr.reduce((sum, a) => sum + a.price, 0);
-            const unitPrice = activeModalItem.price + addonsTotal;
-
-            cart.push({
-                id: activeModalItem.id,
-                name: activeModalItem.name,
-                price: unitPrice,
-                basePrice: activeModalItem.price,
-                qty: currentModalQty,
-                addons: addonsArr,
-                obs: obs,
-                image: activeModalItem.image
-            });
-
-            updateCartBadge();
-            closeItemDetailModal();
-            openCart();
-        }
-
-        // Carrinho e Checkout
-        function openCart() {
-            renderCartItems();
-            updateCheckoutTotals();
-            document.getElementById('cart-modal').classList.remove('hidden');
-        }
-
-        function closeCart() {
-            document.getElementById('cart-modal').classList.add('hidden');
-        }
-
-        function updateCartBadge() {
-            const badge = document.getElementById('cart-badge');
-            const totalItems = cart.reduce((sum, i) => sum + i.qty, 0);
-            if(totalItems > 0) {
-                badge.innerText = totalItems;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
-        }
-
-        function renderCartItems() {
-            const list = document.getElementById('cart-items-list');
-            if(!list) return;
-
-            if(cart.length === 0) {
-                list.innerHTML = `<p class="text-xs text-zinc-500 text-center py-6">Seu carrinho está vazio.</p>`;
-                return;
-            }
-
-            list.innerHTML = cart.map((item, index) => `
-                <div class="bg-zinc-950 p-3 rounded-2xl border border-zinc-800 flex items-center justify-between gap-3">
-                    <img src="${item.image}" alt="" class="w-14 h-14 rounded-xl object-cover flex-shrink-0">
-                    <div class="flex-1 min-w-0">
-                        <h4 class="font-bold text-xs text-white truncate">${item.name}</h4>
-                        ${item.addons && item.addons.length > 0 ? `<p class="text-[10px] text-amber-500 truncate">+ ${item.addons.map(a => a.name).join(', ')}</p>` : ''}
-                        ${item.obs ? `<p class="text-[10px] text-zinc-400 italic truncate">Obs: ${item.obs}</p>` : ''}
-                        <p class="text-xs font-bold text-zinc-300 mt-1">R$ ${(item.price * item.qty).toFixed(2)}</p>
-                    </div>
-                    <div class="flex items-center bg-zinc-900 border border-zinc-800 rounded-xl">
-                        <button onclick="updateCartItemQty(${index}, -1)" class="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-white"><i class="fa-solid fa-minus text-[10px]"></i></button>
-                        <span class="w-6 text-center font-bold text-xs text-white">${item.qty}</span>
-                        <button onclick="updateCartItemQty(${index}, 1)" class="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-white"><i class="fa-solid fa-plus text-[10px]"></i></button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function updateCartItemQty(index, delta) {
-            cart[index].qty += delta;
-            if(cart[index].qty <= 0) {
-                cart.splice(index, 1);
-            }
-            updateCartBadge();
-            renderCartItems();
-            updateCheckoutTotals();
-        }
-
-        function applyCoupon() {
-            const code = document.getElementById('coupon-input').value.trim().toUpperCase();
-            const msgEl = document.getElementById('coupon-msg');
-
-            if(code === 'MAX10') {
-                discountPercent = 10;
-                appliedCoupon = 'MAX10';
-                msgEl.className = 'text-[11px] text-emerald-400 font-bold';
-                msgEl.innerText = '✅ Cupom MAX10 aplicado (10% de desconto)!';
-            } else if(code === 'MAXBURGER') {
-                discountPercent = 15;
-                appliedCoupon = 'MAXBURGER';
-                msgEl.className = 'text-[11px] text-emerald-400 font-bold';
-                msgEl.innerText = '✅ Cupom MAXBURGER aplicado (15% de desconto)!';
-            } else {
-                discountPercent = 0;
-                appliedCoupon = null;
-                msgEl.className = 'text-[11px] text-red-400 font-bold';
-                msgEl.innerText = '❌ Cupom inválido ou expirado.';
-            }
-            updateCheckoutTotals();
-        }
-
-        function updateCheckoutTotals() {
-            const subtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
-            const discountVal = (subtotal * discountPercent) / 100;
-            const deliveryFee = getCurrentDeliveryFee();
-            const total = (subtotal - discountVal) + deliveryFee;
-
-            document.getElementById('summary-subtotal').innerText = `R$ ${subtotal.toFixed(2)}`;
-            
-            const discRow = document.getElementById('summary-discount-row');
-            if(discountVal > 0) {
-                discRow.classList.remove('hidden');
-                document.getElementById('summary-discount').innerText = `-R$ ${discountVal.toFixed(2)}`;
-            } else {
-                discRow.classList.add('hidden');
-            }
-
-            document.getElementById('summary-delivery').innerText = `R$ ${deliveryFee.toFixed(2)}`;
-            document.getElementById('summary-total').innerText = `R$ ${total.toFixed(2)}`;
-        }
-
-        function toggleTrocoInput() {
-            const payment = document.getElementById('client-payment').value;
-            const trocoWrapper = document.getElementById('troco-wrapper');
-            if(payment === 'Dinheiro') {
-                trocoWrapper.classList.remove('hidden');
-            } else {
-                trocoWrapper.classList.add('hidden');
-            }
-        }
-
-        // Submissão do Pedido e Envio via WhatsApp + Impressão + Firebase
-        function submitOrder(e) {
-            e.preventDefault();
-
-            if (cart.length === 0) {
-                alert('Seu carrinho está vazio.');
-                return;
-            }
-
-            const name = document.getElementById('client-name').value.trim();
-            const phone = document.getElementById('client-phone').value.trim();
-            const sector = document.getElementById('client-sector').value;
-            const address = document.getElementById('client-address').value.trim();
-            const payment = document.getElementById('client-payment').value;
-            const troco = document.getElementById('client-troco').value.trim();
-
-            if (!name || !phone || !sector || !address) {
-                alert('Por favor, preencha todos os campos obrigatórios de entrega e contato.');
-                return;
-            }
-
-            const subtotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
-            const discountVal = (subtotal * discountPercent) / 100;
-            const deliveryFee = getCurrentDeliveryFee();
-            const total = (subtotal - discountVal) + deliveryFee;
-
-            const newOrder = {
-                id: 'MB-' + Math.floor(1000 + Math.random() * 9000),
-                clientName: name,
-                clientPhone: phone,
-                sector: sector,
-                address: address,
-                paymentMethod: payment,
-                trocoFor: payment === 'Dinheiro' ? troco : 'Não aplicável',
-                items: [...cart],
-                subtotal: subtotal,
-                discount: discountVal,
-                deliveryFee: deliveryFee,
-                total: total,
-                status: 'new', // new, production, delivery, completed
-                createdAt: new Date().toISOString(),
-                displayTime: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-            };
-
-            // Salvar no Firebase se disponível
-            if (window.db && window.dbPush) {
-                window.dbPush(window.dbRef(window.db, 'maxburger/orders'), newOrder);
-            }
-
-            // Enviar impressão Bluetooth se conectada
-            if (bluetoothCharacteristic) {
-                printOrderBluetooth(newOrder);
-            }
-
-            // Gerar Mensagem e Abrir WhatsApp
-            let itemsText = cart.map(i => `• ${i.qty}x ${i.name} (R$ ${(i.price * i.qty).toFixed(2)})${i.addons && i.addons.length > 0 ? `\n  + Adicionais: ${i.addons.map(a => a.name).join(', ')}` : ''}${i.obs ? `\n  + Obs: ${i.obs}` : ''}`).join('\n');
-            
-            let msg = `*NOVO PEDIDO - MAX BURGER & GRILL* 🔥\n\n`;
-            msg += `🆔 Pedido: *${newOrder.id}*\n`;
-            msg += `👤 Cliente: *${name}*\n`;
-            msg += `📞 WhatsApp: ${phone}\n\n`;
-            msg += `📍 *Endereço de Entrega:*\n`;
-            msg += `${address} - ${sector}\n\n`;
-            msg += `🛒 *Itens do Pedido:*\n${itemsText}\n\n`;
-            msg += `💰 *Resumo dos Valores:*\n`;
-            msg += `Subtotal: R$ ${subtotal.toFixed(2)}\n`;
-            if (discountVal > 0) msg += `Desconto (${appliedCoupon}): -R$ ${discountVal.toFixed(2)}\n`;
-            msg += `Taxa de Entrega: R$ ${deliveryFee.toFixed(2)}\n`;
-            msg += `*Total a Pagar: R$ ${total.toFixed(2)}*\n\n`;
-            msg += `💳 Pagamento: *${payment}*${payment === 'Dinheiro' && troco ? ` (Troco para: ${troco})` : ''}`;
-
-            const encodedMsg = encodeURIComponent(msg);
-            const whatsappNumber = '5563999999999'; // Número do Estabelecimento
-            window.open(`https://wa.me/${whatsappNumber}?text=${encodedMsg}`, '_blank');
-
-            // Limpar Carrinho e Fechar Modal
-            cart = [];
-            updateCartBadge();
-            closeCart();
-            alert('Pedido gerado e enviado com sucesso!');
-        }
-
-        // Funções do Painel Administrativo (Kanban & Gestão)
-        function renderAdminDashboard() {
-            const listNew = document.getElementById('list-new-orders');
-            const listProd = document.getElementById('list-production-orders');
-            const listDeliv = document.getElementById('list-delivery-orders');
-            const listComp = document.getElementById('list-completed-orders');
-
-            if (!listNew) return;
-
-            const newOrders = orders.filter(o => o.status === 'new');
-            const prodOrders = orders.filter(o => o.status === 'production');
-            const delivOrders = orders.filter(o => o.status === 'delivery');
-            const compOrders = orders.filter(o => o.status === 'completed');
-
-            document.getElementById('count-new').innerText = newOrders.length;
-            document.getElementById('count-production').innerText = prodOrders.length;
-            document.getElementById('count-delivery').innerText = delivOrders.length;
-            document.getElementById('count-completed').innerText = compOrders.length;
-
-            listNew.innerHTML = renderOrderCards(newOrders);
-            listProd.innerHTML = renderOrderCards(prodOrders);
-            listDeliv.innerHTML = renderOrderCards(delivOrders);
-            listComp.innerHTML = renderOrderCards(compOrders);
-        }
-
-        function renderOrderCards(orderList) {
-            if (orderList.length === 0) {
-                return `<p class="text-[11px] text-zinc-600 text-center py-4">Nenhum pedido</p>`;
-            }
-
-            return orderList.map(o => `
-                <div class="bg-zinc-950 p-3.5 rounded-2xl border border-zinc-800 space-y-2.5 shadow-md">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <span class="text-[10px] font-extrabold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">${o.id}</span>
-                            <h4 class="font-bold text-xs text-white mt-1.5">${o.clientName}</h4>
-                        </div>
-                        <span class="text-[10px] text-zinc-500">${o.displayTime || ''}</span>
-                    </div>
-
-                    <div class="text-[11px] text-zinc-300 space-y-1 bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-800/80">
-                        <p class="text-amber-400 font-bold">📍 ${o.sector}</p>
-                        <p class="text-zinc-400 truncate">${o.address}</p>
-                        <div class="pt-1 border-t border-zinc-800/80 space-y-0.5">
-                            ${o.items.map(i => `<div class="flex justify-between text-[10px]"><span>${i.qty}x ${i.name}</span> <span class="font-bold text-white">R$ ${(i.price * i.qty).toFixed(2)}</span></div>`).join('')}
-                        </div>
-                    </div>
-
-                    <div class="flex justify-between items-center text-[11px] pt-1">
-                        <div>
-                            <span class="text-zinc-500">Total:</span> <strong class="text-emerald-400 font-black">R$ ${o.total.toFixed(2)}</strong>
-                            <p class="text-[9px] text-zinc-500">${o.paymentMethod}</p>
-                        </div>
-                        <div class="flex gap-1.5">
-                            ${o.status === 'new' ? `<button onclick="updateOrderStatus('${o.firebaseKey}', 'production')" class="bg-orange-500 hover:bg-orange-600 text-zinc-950 px-2.5 py-1.5 rounded-lg font-bold text-[10px] transition">Produzir</button>` : ''}
-                            ${o.status === 'production' ? `<button onclick="updateOrderStatus('${o.firebaseKey}', 'delivery')" class="bg-blue-500 hover:bg-blue-600 text-zinc-950 px-2.5 py-1.5 rounded-lg font-bold text-[10px] transition">Entregar</button>` : ''}
-                            ${o.status === 'delivery' ? `<button onclick="updateOrderStatus('${o.firebaseKey}', 'completed')" class="bg-emerald-500 hover:bg-emerald-600 text-zinc-950 px-2.5 py-1.5 rounded-lg font-bold text-[10px] transition">Concluir</button>` : ''}
-                            <button onclick="deleteOrder('${o.firebaseKey}')" class="text-zinc-600 hover:text-red-400 p-1 transition" title="Excluir"><i class="fa-solid fa-trash-can text-xs"></i></button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function updateOrderStatus(firebaseKey, newStatus) {
-            if (window.db && window.dbUpdate) {
-                window.dbUpdate(window.dbRef(window.db, `maxburger/orders/${firebaseKey}`), { status: newStatus });
-            }
-        }
-
-        function deleteOrder(firebaseKey) {
-            if (confirm('Deseja realmente excluir este pedido do sistema?')) {
-                if (window.db && window.dbRemove) {
-                    window.dbRemove(window.dbRef(window.db, `maxburger/orders/${firebaseKey}`));
-                }
-            }
-        }
-
-        // Gestão de Cardápio Admin
-        function renderAdminMenu() {
-            const list = document.getElementById('admin-menu-list');
-            if (!list) return;
-
-            list.innerHTML = menuData.map(item => `
-                <div class="p-3.5 flex items-center justify-between gap-3">
-                    <img src="${item.image}" alt="" class="w-12 h-12 rounded-xl object-cover flex-shrink-0">
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2">
-                            <h4 class="font-bold text-xs text-white truncate">${item.name}</h4>
-                            <span class="text-[9px] bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full">${item.category}</span>
-                        </div>
-                        <p class="text-xs font-black text-amber-500 mt-0.5">R$ ${item.price.toFixed(2)}</p>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <button onclick="openItemModal(${item.id})" class="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center transition"><i class="fa-solid fa-pen text-xs"></i></button>
-                        <button onclick="deleteMenuItem(${item.id})" class="w-8 h-8 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 flex items-center justify-center transition"><i class="fa-solid fa-trash text-xs"></i></button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function openItemModal(itemId = null) {
-            const modalTitle = document.getElementById('item-modal-title');
-            if (itemId) {
-                modalTitle.innerText = 'Editar Item do Cardápio';
-                const item = menuData.find(i => i.id === itemId);
-                if (item) {
-                    document.getElementById('item-id').value = item.id;
-                    document.getElementById('item-name').value = item.name;
-                    document.getElementById('item-category').value = item.category;
-                    document.getElementById('item-price').value = item.price;
-                    document.getElementById('item-tag').value = item.tag || '';
-                    document.getElementById('item-image').value = item.image;
-                    document.getElementById('item-desc').value = item.desc;
-                }
-            } else {
-                modalTitle.innerText = 'Novo Item do Cardápio';
-                document.getElementById('item-id').value = '';
-                document.getElementById('item-name').value = '';
-                document.getElementById('item-category').value = 'Burgers';
-                document.getElementById('item-price').value = '';
-                document.getElementById('item-tag').value = '';
-                document.getElementById('item-image').value = '';
-                document.getElementById('item-desc').value = '';
-            }
-            document.getElementById('item-modal').classList.remove('hidden');
-        }
-
-        function closeItemModal() {
-            document.getElementById('item-modal').classList.add('hidden');
-        }
-
-        function saveMenuItem(e) {
-            e.preventDefault();
-            const idVal = document.getElementById('item-id').value;
-            const newItem = {
-                id: idVal ? Number(idVal) : Date.now(),
-                name: document.getElementById('item-name').value.trim(),
-                category: document.getElementById('item-category').value,
-                price: Number(document.getElementById('item-price').value),
-                tag: document.getElementById('item-tag').value.trim(),
-                image: document.getElementById('item-image').value.trim(),
-                desc: document.getElementById('item-desc').value.trim()
-            };
-
-            if (idVal) {
-                const idx = menuData.findIndex(i => i.id === Number(idVal));
-                if (idx !== -1) menuData[idx] = newItem;
-            } else {
-                menuData.push(newItem);
-            }
-
-            if (window.db && window.dbSet) {
-                window.dbSet(window.dbRef(window.db, 'maxburger/menu'), menuData);
-            }
-
-            renderMenu();
-            renderAdminMenu();
-            closeItemModal();
-        }
-
-        function deleteMenuItem(id) {
-            if (confirm('Deseja excluir este item do cardápio?')) {
-                menuData = menuData.filter(i => i.id !== id);
-                if (window.db && window.dbSet) {
-                    window.dbSet(window.dbRef(window.db, 'maxburger/menu'), menuData);
-                }
-                renderMenu();
-                renderAdminMenu();
-            }
-        }
-
-        // Relatórios Financeiros e Caixa
-        function renderFinanceReports() {
-            const dateFilterEl = document.getElementById('finance-date-filter');
-            const filterDate = dateFilterEl ? dateFilterEl.value : '';
-
-            let filteredOrders = orders;
-            if (filterDate) {
-                filteredOrders = orders.filter(o => {
-                    if (!o.createdAt) return false;
-                    return o.createdAt.startsWith(filterDate);
-                });
-            }
-
-            const completedOrders = filteredOrders.filter(o => o.status === 'completed' || o.status === 'delivery');
-            
-            // Cálculos
-            const totalRevenue = completedOrders.reduce((sum, o) => sum + o.total, 0);
-            
-            // Hoje
-            const todayStr = new Date().toISOString().split('T')[0];
-            const dayRevenue = orders
-                .filter(o => (o.status === 'completed' || o.status === 'delivery') && o.createdAt && o.createdAt.startsWith(todayStr))
-                .reduce((sum, o) => sum + o.total, 0);
-
-            // Últimos 7 dias
-            const weekAgo = new Date();
-            weekAgo.setDate(weekAgo.getDate() - 7);
-            const weekRevenue = orders
-                .filter(o => (o.status === 'completed' || o.status === 'delivery') && o.createdAt && new Date(o.createdAt) >= weekAgo)
-                .reduce((sum, o) => sum + o.total, 0);
-
-            // Mês atual
-            const currentMonthStr = todayStr.substring(0, 7);
-            const monthRevenue = orders
-                .filter(o => (o.status === 'completed' || o.status === 'delivery') && o.createdAt && o.createdAt.startsWith(currentMonthStr))
-                .reduce((sum, o) => sum + o.total, 0);
-
-            document.getElementById('rep-day').innerText = `R$ ${dayRevenue.toFixed(2)}`;
-            document.getElementById('rep-week').innerText = `R$ ${weekRevenue.toFixed(2)}`;
-            document.getElementById('rep-month').innerText = `R$ ${monthRevenue.toFixed(2)}`;
-            document.getElementById('rep-count').innerText = completedOrders.length;
-
-            // Lista detalhada de vendas
-            const listEl = document.getElementById('finance-orders-list');
-            if (listEl) {
-                if (completedOrders.length === 0) {
-                    listEl.innerHTML = `<p class="text-xs text-zinc-500 text-center py-4">Nenhuma venda registrada no período.</p>`;
-                } else {
-                    listEl.innerHTML = completedOrders.map(o => `
-                        <div class="py-2.5 flex items-center justify-between text-xs">
-                            <div>
-                                <span class="font-bold text-amber-500">${o.id}</span>
-                                <span class="text-zinc-300 ml-2">${o.clientName}</span>
-                                <p class="text-[10px] text-zinc-500">${o.createdAt ? new Date(o.createdAt).toLocaleString('pt-BR') : ''} • ${o.paymentMethod}</p>
-                            </div>
-                            <span class="font-black text-emerald-400">R$ ${o.total.toFixed(2)}</span>
-                        </div>
-                    `).join('');
-                }
-            }
-
-            // Ranking de Produtos Mais Vendidos
-            let productCounts = {};
-            completedOrders.forEach(o => {
-                if (o.items) {
-                    o.items.forEach(i => {
-                        productCounts[i.name] = (productCounts[i.name] || 0) + i.qty;
-                    });
-                }
-            });
-
-            const sortedProducts = Object.entries(productCounts).sort((a, b) => b[1] - a[1]);
-            const topProductsEl = document.getElementById('top-products-list');
-            if (topProductsEl) {
-                if (sortedProducts.length === 0) {
-                    topProductsEl.innerHTML = `<p class="text-xs text-zinc-500 text-center py-2">Sem dados de vendas suficientes.</p>`;
-                } else {
-                    topProductsEl.innerHTML = sortedProducts.slice(0, 5).map(([name, qty], idx) => `
-                        <div class="flex justify-between items-center bg-zinc-950 p-2.5 rounded-xl border border-zinc-800 text-xs">
-                            <div class="flex items-center gap-2">
-                                <span class="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 font-bold text-[10px] flex items-center justify-center">${idx + 1}</span>
-                                <span class="text-zinc-200 font-bold">${name}</span>
-                            </div>
-                            <span class="text-amber-500 font-black">${qty} vendidos</span>
-                        </div>
-                    `).join('');
-                }
-            }
-        }
-
-        function clearDateFilter() {
-            document.getElementById('finance-date-filter').value = '';
-            renderFinanceReports();
-        }
-
-        function clearHistoryPeriod(period) {
-            if (confirm(`Deseja limpar os registros de pedidos (${period === 'day' ? 'do dia' : 'todo o histórico'})?`)) {
-                if (period === 'all') {
-                    if (window.db && window.dbSet) {
-                        window.dbSet(window.dbRef(window.db, 'maxburger/orders'), null);
-                    }
-                } else {
-                    const todayStr = new Date().toISOString().split('T')[0];
-                    orders.forEach(o => {
-                        if (o.createdAt && o.createdAt.startsWith(todayStr)) {
-                            if (window.db && window.dbRemove) {
-                                window.dbRemove(window.dbRef(window.db, `maxburger/orders/${o.firebaseKey}`));
-                            }
-                        }
-                    });
-                }
-            }
-        }
-
-        // Integração com Impressora Térmica Bluetooth (Web Bluetooth API)
-        async function requestBluetoothPrinter() {
+        let versesDatabase = [];
+        let currentVerseIndex = 0;
+        let verseTimer = null;
+
+        // Função assíncrona para buscar dados na coleção 'versiculos' do Firestore
+        async function loadVersesCollection() {
             try {
-                const device = await navigator.bluetooth.requestDevice({
-                    acceptAllDevices: true,
-                    optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] // Serviço comum de impressoras térmicas ESC/POS
-                });
-
-                const server = await device.gatt.connect();
-                const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
-                const characteristics = await service.getCharacteristics();
-                bluetoothCharacteristic = characteristics[0];
-
-                alert(`Impressora ${device.name || 'Bluetooth'} conectada com sucesso!`);
+                const querySnapshot = await db.collection("versiculos").get();
+                if (!querySnapshot.empty) {
+                    versesDatabase = [];
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        // Garante compatibilidade com os nomes dos campos salvos
+                        versesDatabase.push({
+                            text: data.text || data.versiculo,
+                            ref: data.ref || data.referencia
+                        });
+                    });
+                } else {
+                    versesDatabase = fallbackVerses;
+                }
             } catch (error) {
-                console.error(error);
-                alert('Erro ao conectar impressora Bluetooth ou suporte não disponível neste navegador.');
+                console.warn("Aviso: Utilizando banco de versículos local (Modo Fallback). Erro:", error);
+                versesDatabase = fallbackVerses;
             }
+            renderCurrentVerse();
+            initInfiniteVerseRotation();
         }
 
-        async function printOrderBluetooth(order) {
-            if (!bluetoothCharacteristic) return;
+        // Renderiza o versículo atual na tela com efeito suave
+        function renderCurrentVerse() {
+            if (versesDatabase.length === 0) return;
+            
+            const verseBox = document.getElementById('bible-verse');
+            const refBox = document.getElementById('bible-ref');
 
-            try {
-                // Comandos ESC/POS básicos para impressora térmica
-                let encoder = new TextEncoder();
-                let printData = '\x1B\x40'; // Inicializar impressora
-                printData += '\x1B\x61\x01'; // Centralizar
-                printData += 'MAX BURGER & GRILL\n';
-                printData += 'Artesanal na Brasa - Palmas/TO\n';
-                printData += '--------------------------------\n';
-                printData += `PEDIDO: ${order.id}\n`;
-                printData += `CLIENTE: ${order.clientName}\n`;
-                printData += `FONE: ${order.clientPhone}\n`;
-                printData += '\x1B\x61\x00'; // Alinhar à esquerda
-                printData += '--------------------------------\n';
-                printData += `ENDEREÇO:\n${order.address} - ${order.sector}\n`;
-                printData += '--------------------------------\n';
-                printData += 'ITENS:\n';
-                order.items.forEach(i => {
-                    printData += `${i.qty}x ${i.name} - R$ ${(i.price * i.qty).toFixed(2)}\n`;
-                    if (i.addons && i.addons.length > 0) printData += `  + ${i.addons.map(a => a.name).join(', ')}\n`;
-                    if (i.obs) printData += `  + Obs: ${i.obs}\n`;
+            // Aplica efeito de transição suave
+            verseBox.style.opacity = '0';
+            refBox.style.opacity = '0';
+
+            setTimeout(() => {
+                const current = versesDatabase[currentVerseIndex];
+                verseBox.innerText = `"${current.text}"`;
+                refBox.innerText = `— ${current.ref}`;
+                
+                verseBox.style.opacity = '1';
+                refBox.style.opacity = '1';
+
+                // Avança para o próximo índice de forma infinita (loop circular)
+                currentVerseIndex = (currentVerseIndex + 1) % versesDatabase.length;
+            }, 250);
+        }
+
+        // Passa o versículo manualmente e reinicia o temporizador automático
+        function fetchNextVerseManual() {
+            renderCurrentVerse();
+            resetInfiniteVerseRotation();
+        }
+
+        // Gerencia a rotação automática contínua (a cada 15 segundos)
+        function initInfiniteVerseRotation() {
+            if (verseTimer) clearInterval(verseTimer);
+            verseTimer = setInterval(() => {
+                renderCurrentVerse();
+            }, 15000);
+        }
+
+        // Reseta o ciclo automático para evitar conflito com o clique manual
+        function resetInfiniteVerseRotation() {
+            initInfiniteVerseRotation();
+        }
+
+        /* ==========================================================
+           3. PLAYER DE RÁDIO SERTANEJO RAIZ (CLÁSSICOS NACIONAIS)
+           ========================================================== */
+        const radioAudio = document.getElementById('sertanejo-audio');
+        const playButton = document.getElementById('play-btn');
+        const radioStatusText = document.getElementById('radio-status');
+        const radioPulseEffect = document.getElementById('radio-pulse');
+        let isRadioPlaying = false;
+
+        function toggleRadioPlayer() {
+            if (isRadioPlaying) {
+                radioAudio.pause();
+                playButton.innerHTML = "▶";
+                radioStatusText.innerText = "Ouça os clássicos nacionais";
+                radioPulseEffect.classList.add('hidden');
+                isRadioPlaying = false;
+            } else {
+                radioStatusText.innerText = "Conectando ao sertanejo raiz...";
+                radioAudio.play().then(() => {
+                    playButton.innerHTML = "⏸";
+                    radioStatusText.innerText = "AO VIVO: Clássicos Sertanejos";
+                    radioPulseEffect.classList.remove('hidden');
+                    isRadioPlaying = true;
+                }).catch((error) => {
+                    console.error("Erro ao iniciar transmissão da rádio:", error);
+                    radioStatusText.innerText = "Erro no stream. Tente novamente.";
+                    playButton.innerHTML = "▶";
+                    isRadioPlaying = false;
                 });
-                printData += '--------------------------------\n';
-                printData += `TAXA ENTREGA: R$ ${order.deliveryFee.toFixed(2)}\n`;
-                if (order.discount > 0) printData += `DESCONTO: -R$ ${order.discount.toFixed(2)}\n`;
-                printData += `TOTAL: R$ ${order.total.toFixed(2)}\n`;
-                printData += `PAGAMENTO: ${order.paymentMethod}\n`;
-                if (order.trocoFor && order.trocoFor !== 'Não aplicável') printData += `TROCO PARA: ${order.trocoFor}\n`;
-                printData += '--------------------------------\n';
-                printData += '\x1B\x61\x01'; // Centralizar
-                printData += 'Obrigado pela preferencia!\n\n\n';
-
-                await bluetoothCharacteristic.writeValue(encoder.encode(printData));
-            } catch (err) {
-                console.error('Erro na impressão Bluetooth:', err);
             }
         }
+
+        // Inicialização Geral da Página
+        window.addEventListener('DOMContentLoaded', () => {
+            loadVersesCollection();
+        });
     </script>
 </body>
 </html>
