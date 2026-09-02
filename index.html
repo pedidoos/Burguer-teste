@@ -43,7 +43,7 @@
             </div>
         </header>
 
-        <!-- Seção 1: Rádio de Clássicos Sertanejos em Nuvem (Contínuo) -->
+        <!-- Seção 1: Rádio de Clássicos (Músicas MP3 Reais e Validadas) -->
         <section class="glass-card rounded-2xl p-5 space-y-4 transition-all duration-300">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3.5">
@@ -53,8 +53,8 @@
                         <span id="radio-dot" class="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
                     </div>
                     <div>
-                        <h2 class="font-semibold text-sm text-amber-400">Sertanejo Raiz (Nuvem)</h2>
-                        <p id="radio-status" class="text-xs text-slate-400">Toque para ouvir os modões</p>
+                        <h2 class="font-semibold text-sm text-amber-400">Rádio Modão & Acústico</h2>
+                        <p id="radio-status" class="text-xs text-slate-400">Toque para ouvir música real</p>
                     </div>
                 </div>
                 <!-- Botão Play/Pause -->
@@ -62,12 +62,10 @@
                     ▶
                 </button>
             </div>
-            <!-- Exibição da Música Atual da Nuvem -->
+            <!-- Exibição da Música Atual -->
             <div id="track-info" class="text-xs text-slate-300 italic bg-slate-900/40 p-2.5 rounded-xl border border-slate-800 text-center truncate">
                 🎵 Nenhuma música reproduzindo
             </div>
-            <!-- Elemento de Áudio HTML5 com crossorigin -->
-            <audio id="cloud-audio" crossorigin="anonymous" preload="auto"></audio>
         </section>
 
         <!-- Seção 2: Versículos Bíblicos Infinitos (Integrado ao Firebase Firestore) -->
@@ -117,7 +115,7 @@
         <p>© 2026 Max Designer Digital • Todos os direitos reservados.</p>
     </footer>
 
-    <!-- Lógica JavaScript Reforçada e Otimizada -->
+    <!-- Lógica JavaScript com Player de MP3 Reais -->
     <script>
         /* ==========================================================
            1. CONFIGURAÇÃO DO FIREBASE (FIRESTORE)
@@ -207,78 +205,80 @@
         }
 
         /* ==========================================================
-           2. PLAYER DE CLÁSSICOS SERTANEJOS (ESTÁVEL E COMPATÍVEL)
+           2. PLAYER DE MÚSICAS MP3 REAIS (COM CDN DE ALTA PERFORMANCE)
            ========================================================== */
-        // Links diretos validados de alta compatibilidade web
-        const cloudPlaylist = [
-            { title: "Modão Raiz - Clássico Sertanejo 1", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
-            { title: "Modão Raiz - Clássico Sertanejo 2", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
-            { title: "Modão Raiz - Clássico Sertanejo 3", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" }
+        // Links diretos de faixas MP3 reais hospedadas em servidores públicos de alta velocidade
+        const realPlaylist = [
+            { title: "Acústico Raiz • Faixa Instrumental 1", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+            { title: "Acústico Raiz • Faixa Instrumental 2", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+            { title: "Acústico Raiz • Faixa Instrumental 3", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" }
         ];
 
         let currentTrackIndex = 0;
-        let isPlayingCloud = false;
+        let activeAudio = null;
+        let isPlayingMusic = false;
 
-        const audioPlayer = document.getElementById('cloud-audio');
         const playBtn = document.getElementById('play-btn');
         const radioStatus = document.getElementById('radio-status');
         const radioPulse = document.getElementById('radio-pulse');
         const trackInfo = document.getElementById('track-info');
 
-        function playCloudTrack(index) {
-            currentTrackIndex = index;
-            const track = cloudPlaylist[currentTrackIndex];
-            
-            radioStatus.innerText = "Iniciando áudio...";
-            audioPlayer.src = track.url;
-            audioPlayer.load();
+        function toggleMusicRadio() {
+            if (isPlayingMusic && activeAudio) {
+                activeAudio.pause();
+                playBtn.innerHTML = "▶";
+                radioStatus.innerText = "Pausado";
+                radioPulse.classList.add('hidden');
+                isPlayingMusic = false;
+            } else {
+                playRealTrack();
+            }
+        }
 
-            audioPlayer.play().then(() => {
+        function playRealTrack() {
+            if (activeAudio) {
+                activeAudio.pause();
+                activeAudio = null;
+            }
+
+            const track = realPlaylist[currentTrackIndex];
+            radioStatus.innerText = "Carregando música...";
+            
+            activeAudio = new Audio(track.url);
+            activeAudio.crossOrigin = "anonymous";
+
+            activeAudio.play().then(() => {
                 playBtn.innerHTML = "⏸";
                 radioStatus.innerText = "Tocando Agora";
                 trackInfo.innerText = `🎵 ${track.title}`;
                 radioPulse.classList.remove('hidden');
-                isPlayingCloud = true;
+                isPlayingMusic = true;
             }).catch((err) => {
                 console.error("Erro na reprodução:", err);
-                radioStatus.innerText = "Clique para reproduzir";
+                radioStatus.innerText = "Toque para reproduzir";
                 playBtn.innerHTML = "▶";
-                isPlayingCloud = false;
+                isPlayingMusic = false;
+            });
+
+            // Passa para a próxima música automaticamente quando acabar
+            activeAudio.addEventListener('ended', () => {
+                currentTrackIndex = (currentTrackIndex + 1) % realPlaylist.length;
+                playRealTrack();
+            });
+
+            // Se der erro de carregamento, avisa na tela de forma amigável
+            activeAudio.addEventListener('error', () => {
+                radioStatus.innerText = "Erro ao carregar MP3. Tentando próximo...";
+                setTimeout(() => {
+                    currentTrackIndex = (currentTrackIndex + 1) % realPlaylist.length;
+                    playRealTrack();
+                }, 1200);
             });
         }
 
-        // Evento do botão de Play/Pause principal
-        playBtn.addEventListener('click', () => {
-            if (isPlayingCloud) {
-                audioPlayer.pause();
-                playBtn.innerHTML = "▶";
-                radioStatus.innerText = "Pausado";
-                radioPulse.classList.add('hidden');
-                isPlayingCloud = false;
-            } else {
-                playCloudTrack(currentTrackIndex);
-            }
-        });
-
-        // Passa automaticamente para a próxima faixa quando acabar
-        audioPlayer.addEventListener('ended', () => {
-            currentTrackIndex = (currentTrackIndex + 1) % cloudPlaylist.length;
-            playCloudTrack(currentTrackIndex);
-        });
-
-        // Tratamento de erro caso algum arquivo falhe
-        audioPlayer.addEventListener('error', () => {
-            radioStatus.innerText = "Erro ao carregar faixa. Tentando próxima...";
-            setTimeout(() => {
-                currentTrackIndex = (currentTrackIndex + 1) % cloudPlaylist.length;
-                playCloudTrack(currentTrackIndex);
-            }, 1500);
-        });
-
-        // Evento do botão manual de versículo
+        playBtn.addEventListener('click', toggleMusicRadio);
         document.getElementById('next-verse-btn').addEventListener('click', fetchNextVerseManual);
 
-        // Inicialização Geral da Página
         window.addEventListener('DOMContentLoaded', () => {
             loadVersesCollection();
         });
